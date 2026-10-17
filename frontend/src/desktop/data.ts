@@ -1,0 +1,182 @@
+import { productName } from "./branding";
+import { z } from "zod";
+const windowSchema = z.object({
+  used_percent: z.number().finite().nullable().optional(),
+  reset_at: z.number().nullable().optional(),
+  limit_window_seconds: z.number().nullable().optional(),
+});
+const quotaSchema = z
+  .object({
+    rate_limit: z
+      .object({
+        primary_window: windowSchema.nullable().optional(),
+        secondary_window: windowSchema.nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+export const ObservedWindowSchema = z.object({
+  period: z.enum(["primary", "secondary", "monthly"]),
+  label: z.string(),
+  seconds: z.number().nullable(),
+  remaining: z.number().min(0).max(100).nullable(),
+  reset_at: z.number().nullable(),
+});
+export const SampleSchema = z.object({
+  at: z.number(),
+  windows: z.array(ObservedWindowSchema),
+});
+export type Sample = z.infer<typeof SampleSchema>;
+export type ObservedWindow = z.infer<typeof ObservedWindowSchema>;
+export const AlertPreferenceSchema = z.object({
+  enabled: z.boolean(),
+  threshold: z.number().int().min(1).max(100),
+});
+export type AlertPreference = z.infer<typeof AlertPreferenceSchema>;
+export const ResetCreditObservationSchema = z.object({
+  available_count: z.number().int().nonnegative().nullable(),
+  credits: z
+    .array(
+      z.object({
+        id: z.string(),
+        status: z.string().nullable(),
+        expires_at: z.iso.datetime({ offset: true }).nullable(),
+      }),
+    )
+    .nullable(),
+  observed_at: z.iso.datetime({ offset: true }).nullable(),
+  error: z.string().nullable(),
+});
+export type ResetCreditObservation = z.infer<
+  typeof ResetCreditObservationSchema
+>;
+export const SnapshotSchema = z.object({
+  accounts: z.array(
+    z.object({
+      id: z.string(),
+      account_id: z.string(),
+      email: z.string().nullable(),
+      plan: z.string().nullable(),
+      paused: z.boolean(),
+      quota: quotaSchema.nullable(),
+      quota_observed_at: z.iso.datetime({ offset: true }).nullable(),
+    }),
+  ),
+  storage_pending: z.boolean(),
+  reset_credits: z.record(z.string(), ResetCreditObservationSchema),
+  usage_errors: z.record(z.string(), z.string()),
+  history: z.record(z.string(), z.array(SampleSchema)),
+  quota_windows: z.record(z.string(), z.array(ObservedWindowSchema)),
+  alert_preferences: z.record(z.string(), AlertPreferenceSchema),
+  poll_status: z.record(
+    z.string(),
+    z.object({
+      last_attempt_at: z.number().nullable(),
+      next_refresh_at: z.number().nullable(),
+      refreshing: z.boolean(),
+    }),
+  ),
+  monitoring_issue: z.string().nullable(),
+});
+export type Snapshot = z.infer<typeof SnapshotSchema>;
+export const DeviceSchema = z.object({
+  user_code: z.string(),
+  verification_url: z.url(),
+  interval_seconds: z.number().positive(),
+  expires_at: z.iso.datetime({ offset: true }),
+});
+export type Device = z.infer<typeof DeviceSchema>;
+export async function invoke(
+  command: string,
+  args: Record<string, unknown> = {},
+): Promise<unknown> {
+  const api = (
+    window as Window & {
+      __TAURI__?: {
+        core: {
+          invoke: (
+            command: string,
+            args: Record<string, unknown>,
+          ) => Promise<unknown>;
+        };
+      };
+    }
+  ).__TAURI__;
+  if (!api) throw new Error(`${productName} 앱에서 실행해 주세요.`);
+  return api.core.invoke(command, args);
+}
+function remaining(value: number | null | undefined) {
+  return value == null ? null : Math.max(0, Math.min(100, 100 - value));
+}
+function reset(value: number | null | undefined) {
+  if (value == null) return null;
+  const d = new Date(value * 1000);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+export function projectAccounts(data: Snapshot) {
+  return data.accounts.map((a) => {
+    let p = a.quota?.rate_limit?.primary_window;
+    let s = a.quota?.rate_limit?.secondary_window;
+    let m: typeof p = null;
+    // The provider may return a weekly/monthly-only limit in the primary slot.
+    if (!s && p?.limit_window_seconds === 604800) {
+      s = p;
+      p = null;
+    } else if (!s && p?.limit_window_seconds === 2592000) {
+      m = p;
+      p = null;
+    }
+    return {
+      accountId: a.id,
+      email: a.email ?? "",
+      displayName: a.email || a.account_id,
+      planType: a.plan ?? "unknown",
+      status: a.paused ? "paused" : "active",
+      usage: {
+        primaryRemainingPercent: remaining(p?.used_percent),
+        secondaryRemainingPercent: remaining(s?.used_percent),
+        monthlyRemainingPercent: remaining(m?.used_percent),
+      },
+      resetAtMonthly: reset(m?.reset_at),
+      windowMinutesMonthly:
+        m?.limit_window_seconds == null ? null : m.limit_window_seconds / 60,
+      resetAtPrimary: reset(p?.reset_at),
+      resetAtSecondary: reset(s?.reset_at),
+      windowMinutesPrimary:
+        p?.limit_window_seconds == null ? null : p.limit_window_seconds / 60,
+      windowMinutesSecondary:
+        s?.limit_window_seconds == null ? null : s.limit_window_seconds / 60,
+    };
+  });
+}
+export type AccountView = ReturnType<typeof projectAccounts>[number];
+export const LoginStatusSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("pending") }),
+  z.object({ status: z.literal("connected") }),
+]);
+
+export async function listenOperationError(
+  handler: (message: string) => void,
+): Promise<() => void> {
+  const api = (
+    window as Window & {
+      __TAURI__?: {
+        event?: {
+          listen: (
+            name: string,
+            callback: (event: { payload: unknown }) => void,
+          ) => Promise<() => void>;
+        };
+      };
+    }
+  ).__TAURI__;
+  if (!api?.event) return () => {};
+  return api.event.listen("operation-error", (event) =>
+    handler(
+      typeof event.payload === "string"
+        ? event.payload
+        : "앱 작업 중 오류가 발생했습니다.",
+    ),
+  );
+}

@@ -33,6 +33,7 @@ concurrency:
 
 jobs:
   budgets:
+    if: github.repository == 'Soju06/codex-lb'
     name: Simplicity budgets
     runs-on: ubuntu-24.04
     timeout-minutes: 5

@@ -1,3 +1,5 @@
+> 此文件保留上游 codex-lb 服务的中文说明。当前 Codex Monitor 桌面应用请查看 [README](README.md) 或 [English](README.en.md)。
+
 <!--
 关于
 Codex / ChatGPT 账户负载均衡与代理，提供用量追踪、仪表盘和 OpenCode 兼容端点。
@@ -10,7 +12,7 @@ python oauth sqlalchemy dashboard load-balancer openai rate-limit api-proxy code
 
 ![codex-lb](docs/screenshots/banner.jpg)
 
-[English](./README.md) | **简体中文**
+[Upstream English](./README.upstream.md) | **简体中文**
 
 > **文档站点（英文，权威版本）**: <https://soju06.github.io/codex-lb/> — 本页内容可能滞后，最新使用说明以英文文档站点为准。
 

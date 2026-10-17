@@ -17,7 +17,8 @@
     "typecheck": "bun node_modules/@typescript/native/bin/tsc -b",
     "preview": "vite preview",
     "screenshots": "npx playwright test --config screenshots/playwright.config.ts",
-    "test:browser-smoke": "playwright test --config browser-smoke/playwright.config.ts"
+    "test:browser-smoke": "playwright test --config browser-smoke/playwright.config.ts",
+    "build:desktop": "bun node_modules/@typescript/native/bin/tsc -p tsconfig.desktop.json && vite build --config vite.desktop.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

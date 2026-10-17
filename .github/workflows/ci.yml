@@ -27,6 +27,7 @@ jobs:
   # Detect changed areas so PRs can skip unrelated expensive jobs.
   # Pushes to main and merge queue events still run the full suite.
   changes:
+    if: github.repository == 'Soju06/codex-lb'
     name: Detect changes
     runs-on: ubuntu-24.04
     permissions:
@@ -63,6 +64,7 @@ jobs:
         run: python3 .github/scripts/detect_changed_areas.py
 
   contributors:
+    if: github.repository == 'Soju06/codex-lb'
     name: Contributors attribution
     runs-on: ubuntu-24.04
 
@@ -79,6 +81,7 @@ jobs:
         run: python .github/scripts/check_all_contributors.py
 
   openspec:
+    if: github.repository == 'Soju06/codex-lb'
     name: OpenSpec validation
     runs-on: ubuntu-24.04
 
@@ -99,7 +102,7 @@ jobs:
     name: Frontend lint (eslint)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.frontend == 'true')
 
     steps:
       - name: Checkout repository
@@ -129,7 +132,7 @@ jobs:
     name: Frontend type check (tsc)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.frontend == 'true')
 
     steps:
       - name: Checkout repository
@@ -162,7 +165,7 @@ jobs:
     name: Frontend tests (vitest + coverage)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.frontend == 'true')
 
     steps:
       - name: Checkout repository
@@ -199,7 +202,7 @@ jobs:
     name: Frontend build (vite)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.frontend == 'true')
 
     steps:
       - name: Checkout repository
@@ -229,7 +232,7 @@ jobs:
     name: Dashboard browser smoke (Playwright)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true')
 
     steps:
       - name: Checkout repository
@@ -278,7 +281,7 @@ jobs:
     name: Lint (ruff)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.backend == 'true')
 
     steps:
       - name: Checkout repository
@@ -300,7 +303,7 @@ jobs:
     name: Type check (ty)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.backend == 'true')
 
     steps:
       - name: Checkout repository
@@ -322,7 +325,7 @@ jobs:
     name: Rust workspace
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.rust == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.rust == 'true')
 
     steps:
       - name: Checkout repository
@@ -370,6 +373,7 @@ jobs:
           arguments: --all-features
 
   test:
+    if: github.repository == 'Soju06/codex-lb'
     name: Tests (pytest, ${{ matrix.slice.name }})
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -428,6 +432,7 @@ jobs:
   # critical path; each shard's make target verifies the shards partition the
   # full selection before running pytest (see .github/scripts/pytest_shards.py).
   test-integration-core:
+    if: github.repository == 'Soju06/codex-lb'
     name: Tests (pytest, integration-core-${{ matrix.shard }})
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -487,7 +492,7 @@ jobs:
   test-integration-core-required:
     name: Tests (pytest, integration-core)
     runs-on: ubuntu-24.04
-    if: always()
+    if: github.repository == 'Soju06/codex-lb' && (always())
     needs:
       - test-integration-core
 
@@ -515,6 +520,7 @@ jobs:
           PY
 
   test-postgres:
+    if: github.repository == 'Soju06/codex-lb'
     name: Tests (pytest, PostgreSQL)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -581,7 +587,7 @@ jobs:
     name: Migration check (alembic)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.migrations == 'true' || needs.changes.outputs.backend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.migrations == 'true' || needs.changes.outputs.backend == 'true')
 
     steps:
       - name: Checkout repository
@@ -603,7 +609,7 @@ jobs:
     name: Migration check (alembic, PostgreSQL)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.migrations == 'true' || needs.changes.outputs.backend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.migrations == 'true' || needs.changes.outputs.backend == 'true')
     services:
       postgres:
         image: postgres:16
@@ -639,7 +645,7 @@ jobs:
     name: Package (build)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true')
 
     steps:
       - name: Checkout repository
@@ -676,7 +682,7 @@ jobs:
     name: Docker build
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.docker == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.docker == 'true')
     permissions:
       actions: read
       contents: read
@@ -735,7 +741,7 @@ jobs:
     name: Helm lint + template + kubeconform
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.helm == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.helm == 'true')
 
     steps:
       - name: Checkout repository
@@ -783,7 +789,7 @@ jobs:
     name: Helm smoke install (kind)
     runs-on: ubuntu-24.04
     needs: changes
-    if: needs.changes.outputs.helm == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.helm == 'true')
 
     steps:
       - name: Checkout repository
@@ -837,7 +843,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     needs: changes
-    if: needs.changes.outputs.nix == 'true'
+    if: github.repository == 'Soju06/codex-lb' && (needs.changes.outputs.nix == 'true')
 
     steps:
       - name: Checkout repository
@@ -879,7 +885,7 @@ jobs:
   ci-required:
     name: CI Required
     runs-on: ubuntu-24.04
-    if: always()
+    if: github.repository == 'Soju06/codex-lb' && (always())
     needs:
       - changes
       - contributors

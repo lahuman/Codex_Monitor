@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Codex Monitor",
+  "version": "0.1.0",
+  "identifier": "local.codex-lb.desktop.preview",
+  "build": {
+    "frontendDist": "../dashboard-dist",
+    "beforeBuildCommand": "npm run build:dashboard",
+    "beforeDevCommand": "npm run build:dashboard"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Codex Monitor",
+        "width": 1200,
+        "height": 850,
+        "minWidth": 720,
+        "minHeight": 580
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; font-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "app"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Monitor Codex account limits and reset vouchers.",
+    "longDescription": "A desktop dashboard for Codex account quota observations, reset voucher expiry dates, and local usage history.",
+    "macOS": {
+      "minimumSystemVersion": "13.3"
+    },
+    "resources": {
+      "../../LICENSE": "LICENSE.txt"
+    }
+  }
+}

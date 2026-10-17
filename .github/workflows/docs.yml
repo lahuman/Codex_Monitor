@@ -1,10 +1,14 @@
-name: Docs
+name: Project website and docs
 
 on:
   push:
     branches: ["main"]
     paths:
       - "docs/**"
+      - "website/**"
+      - "desktop/branding/icon.svg"
+      - "desktop/src-tauri/tauri.conf.json"
+      - "scripts/desktop/build-website.mjs"
       - "mkdocs.yml"
       - "pyproject.toml"
       - "uv.lock"
@@ -12,6 +16,10 @@ on:
   pull_request:
     paths:
       - "docs/**"
+      - "website/**"
+      - "desktop/branding/icon.svg"
+      - "desktop/src-tauri/tauri.conf.json"
+      - "scripts/desktop/build-website.mjs"
       - "mkdocs.yml"
       - "pyproject.toml"
       - "uv.lock"
@@ -29,14 +37,22 @@ concurrency:
 
 jobs:
   build:
-    name: Docs build (mkdocs --strict)
+    name: Build introduction and reference docs
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.22.0'
 
       - name: Set up uv
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
@@ -48,7 +64,12 @@ jobs:
       - name: Build docs
         run: |
           uv sync --only-group docs --frozen
-          uv run --no-sync mkdocs build --strict
+          uv run --no-sync mkdocs build --strict --site-dir site/docs
+          node scripts/desktop/build-website.mjs
+
+      - name: Configure Pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

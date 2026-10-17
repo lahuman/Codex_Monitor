@@ -2,7 +2,9 @@
 
 ## Purpose
 Contracts for user-facing documentation: the published mkdocs-material site (strict builds, deploy from `main`, spec backlinks on behavior pages) and the entry-point documents — a README that stays a quickstart and a fully commented, zero-drift `.env.example` — so detailed material lives on the docs site instead of re-growing the README. OpenSpec remains the normative SSOT; docs pages render behavior, they do not define it.
+
 ## Requirements
+
 ### Requirement: Documentation site builds strictly and deploys from main
 
 The repository SHALL contain a mkdocs-material documentation site (`mkdocs.yml` with `docs_dir: docs`) published at https://soju06.github.io/codex-lb/. A dedicated GitHub Actions workflow SHALL build the site with `mkdocs build --strict` on every pull request that touches docs inputs and on pushes to `main`, and SHALL deploy to GitHub Pages only for non-pull-request events on `main`. The deploy job MUST use least-privilege permissions (`pages: write`, `id-token: write` scoped to the deploy job) and MUST NOT cancel in-flight deploys.
@@ -30,17 +32,15 @@ OpenSpec remains the normative source of truth. Every docs page that documents s
 
 ### Requirement: README stays a quickstart
 
-`README.md` SHALL remain a slim quickstart: hero screenshots, feature summary, Quick Start, a single in-README client configuration path (Codex CLI) with a table linking other clients to the docs site, configuration and data pointers, documentation links, and development notes. Detailed operational content (auth modes, routing guide, database runbooks, Kubernetes, remote setup, per-client walkthroughs) SHALL live on the documentation site instead. The README SHALL carry a prominent link to the documentation site and SHALL keep the all-contributors generated block between its `ALL-CONTRIBUTORS-LIST` markers. `README.zh-CN.md` SHALL carry a banner identifying the English documentation site as canonical.
+`README.md` SHALL be the concise Codex Monitor desktop entry point, linking feature, build and provenance guides and stating platform verification status. Detailed desktop guidance SHALL live under `docs/monitor/`. The inherited codex-lb quickstart and generated all-contributors block SHALL remain unchanged in `README.upstream.md`. `README.zh-CN.md` SHALL identify itself as inherited upstream documentation and link the monitor entry point.
 
 #### Scenario: Moved content is reachable from the README
-
-- **WHEN** a reader looks for content removed from the README (e.g. the Postgres 16→18 upgrade runbook)
-- **THEN** the README links to the documentation site where that content now lives
+- **WHEN** a reader looks for upstream service operational content
+- **THEN** the monitor README links to the preserved upstream README and identifies its separate scope.
 
 #### Scenario: Contributors block survives the diet
-
-- **WHEN** the all-contributors bot regenerates the contributors table
-- **THEN** the `ALL-CONTRIBUTORS-LIST:START`/`:END` markers still exist in `README.md` and the update applies cleanly
+- **WHEN** the original contributor acknowledgments are inspected
+- **THEN** their original generated markers and content remain available in `README.upstream.md`.
 
 ### Requirement: .env.example is a commented zero-drift sample
 
@@ -112,4 +112,3 @@ from regenerated output, when the settings surface exceeds its ratchet
 - **WHEN** the reference page is regenerated
 - **THEN** its "Removed" section lists exactly the names in `_REMOVED_SETTINGS`
 - **AND** the page has no deprecated-env-alias list
-

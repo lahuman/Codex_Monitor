@@ -25,7 +25,7 @@ def test_development_compose_uses_owned_launcher_and_restarts_synced_source() ->
 @pytest.mark.parametrize(
     ("relative_path", "command"),
     [
-        ("README.md", "uv run codex-lb"),
+        ("README.upstream.md", "uv run codex-lb"),
         ("README.zh-CN.md", "uv run codex-lb"),
         (
             "openspec/specs/responses-api-compat/ops.md",

@@ -1,8 +1,8 @@
-site_name: codex-lb
-site_description: Codex load balancer and proxy for ChatGPT accounts with usage dashboard
-site_url: https://soju06.github.io/codex-lb/
-repo_url: https://github.com/Soju06/codex-lb
-repo_name: Soju06/codex-lb
+site_name: Codex Monitor · Documentation
+site_description: Codex Monitor desktop guides and inherited codex-lb service reference
+site_url: https://lahuman.github.io/codex_Monitor/docs/
+repo_url: https://github.com/lahuman/codex_Monitor
+repo_name: lahuman/codex_Monitor
 edit_uri: edit/main/docs/
 docs_dir: docs
 
@@ -55,6 +55,14 @@ validation:
 
 nav:
   - Home: index.md
+  - Codex Monitor (desktop fork):
+      - Overview: monitor/index.md
+      - Features and metrics: monitor/features.md
+      - Development: monitor/development.md
+      - Windows: monitor/windows.md
+      - Project website: monitor/website.md
+      - Provenance and credits: monitor/provenance.md
+      - GitHub publication: monitor/publishing.md
   - Getting Started: getting-started.md
   - Client Setup: client-setup.md
   - Live Voice: live-voice.md

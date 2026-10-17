@@ -37,6 +37,7 @@ permissions:
 
 jobs:
   beta-release-guard:
+    if: github.repository == 'Soju06/codex-lb'
     name: Beta release guard
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -65,6 +66,7 @@ jobs:
             --head-ref "${HEAD_REF}"
 
   stable-release-guard:
+    if: github.repository == 'Soju06/codex-lb'
     name: Stable release guard
     runs-on: ubuntu-24.04
     timeout-minutes: 10

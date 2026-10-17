@@ -5,6 +5,8 @@ members = [
     "crates/codex-lb-egress-worker",
     "crates/codex-lb-protocol",
     "crates/codex-lb-responses",
+    "crates/codex-lb-server",
+    "desktop/src-tauri",
 ]
 
 [workspace.package]

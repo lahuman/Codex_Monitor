@@ -24,6 +24,7 @@ dist/
 site/
 /target/
 crates/**/target/
+desktop/src-tauri/gen/
 app/static/
 deploy/helm/*/charts/
 
@@ -71,3 +72,7 @@ SUMMARY.md
 DECISIONS.md
 .superpowers/
 .agents/worktrees/
+
+/desktop/dashboard-dist/
+
+/desktop/releases/

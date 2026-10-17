@@ -1,3 +1,5 @@
+> Codex Monitor 데스크톱 작업은 [개발 안내](../docs/monitor/development.md)와 [프로젝트 README](../README.md)를 먼저 참고하세요. 아래에는 원본 codex-lb 서비스의 기여 지침을 보존합니다.
+
 # Contributing to codex-lb
 
 Thanks for thinking about contributing to codex-lb! This document covers

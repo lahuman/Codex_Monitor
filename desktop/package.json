@@ -1,0 +1,19 @@
+{
+  "name": "codex-lb-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build --bundles app",
+    "build:preview": "tauri build --debug --bundles app",
+    "build:dashboard": "bun run --cwd ../frontend build:desktop",
+    "icons": "node scripts/generate-icons.mjs",
+    "package:macos": "node scripts/package-macos.mjs",
+    "build:windows": "tauri build --target x86_64-pc-windows-msvc --bundles nsis -- --locked",
+    "package:windows": "node scripts/package-windows.mjs",
+    "test:packaging": "node --test scripts/pe.test.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.3"
+  }
+}

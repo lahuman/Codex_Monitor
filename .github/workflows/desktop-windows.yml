@@ -1,0 +1,94 @@
+name: Windows desktop
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'frontend/**'
+      - 'crates/codex-lb-server/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/desktop-windows.yml'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'frontend/**'
+      - 'crates/codex-lb-server/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/desktop-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Test and package Windows x64
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.22.0'
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.3.14'
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup show active-toolchain
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup target add x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install NASM for aws-lc
+        run: |
+          choco install nasm --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$env:ProgramFiles\NASM" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Install locked dependencies
+        run: |
+          bun install --cwd frontend --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm ci --prefix desktop
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build dashboard and verify packaging contracts
+        run: |
+          npm --prefix desktop run build:dashboard
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm --prefix desktop run test:packaging
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Native persistence and desktop tests
+        run: |
+          cargo test --locked -p codex-lb-server --lib
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test --locked -p codex-lb-desktop --bin codex-lb-desktop
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Frontend tests
+        run: |
+          bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Package NSIS installer
+        run: npm --prefix desktop run package:windows
+      - name: Upload versioned installer and checksums
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Codex-Monitor-windows-x64
+          path: desktop/releases/*/windows-x64/
+          if-no-files-found: error
+          retention-days: 30

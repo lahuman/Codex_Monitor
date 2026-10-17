@@ -21,6 +21,7 @@ env:
 
 jobs:
   release-metadata:
+    if: github.repository == 'Soju06/codex-lb'
     name: Resolve release metadata
     runs-on: ubuntu-24.04
 
@@ -46,6 +47,7 @@ jobs:
         run: python -m scripts.release_metadata --tag "${RELEASE_TAG}"
 
   build:
+    if: github.repository == 'Soju06/codex-lb'
     name: Build (sdist + wheel)
     needs: [release-metadata]
     runs-on: ubuntu-24.04
@@ -115,6 +117,7 @@ jobs:
           path: dist/*
 
   publish-to-pypi:
+    if: github.repository == 'Soju06/codex-lb'
     name: Publish to PyPI
     needs: [build]
     runs-on: ubuntu-24.04
@@ -143,6 +146,7 @@ jobs:
           print-hash: true
 
   docker-image:
+    if: github.repository == 'Soju06/codex-lb'
     name: Build and push Docker image
     needs: [build, release-metadata]
     runs-on: ubuntu-24.04
@@ -221,6 +225,7 @@ jobs:
           category: .github/workflows/ci.yml:docker
 
   helm-chart:
+    if: github.repository == 'Soju06/codex-lb'
     name: Publish Helm chart to GHCR
     needs: [build]
     runs-on: ubuntu-24.04
@@ -262,6 +267,7 @@ jobs:
           helm push .helm-pkg/codex-lb-*.tgz "oci://ghcr.io/${OWNER_LC}/charts"
 
   create-github-release:
+    if: github.repository == 'Soju06/codex-lb'
     name: Create GitHub Release
     needs: [publish-to-pypi, docker-image, helm-chart, release-metadata]
     runs-on: ubuntu-24.04
@@ -390,13 +396,7 @@ jobs:
     name: Withdraw failed public release
     needs: [release-metadata, build, publish-to-pypi, docker-image, helm-chart, create-github-release]
     runs-on: ubuntu-24.04
-    if: >-
-      ${{
-        always() &&
-        github.event_name == 'release' &&
-        (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
-      }}
-
+    if: github.repository == 'Soju06/codex-lb' && ( always() && github.event_name == 'release' && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) )
     permissions:
       contents: write
 

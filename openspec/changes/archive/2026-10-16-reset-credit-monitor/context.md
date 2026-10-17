@@ -1,0 +1,18 @@
+# Reset-credit monitoring context
+
+## Purpose and ownership
+Display banked rate-limit reset voucher counts and individual expiry dates per account. These are separate from paid usage credits and scheduled quota resets. The provider contract was checked against the existing Python source and OpenAI Codex app-server rate_limits test fixtures: https://github.com/openai/codex/blob/main/codex-rs/app-server/tests/suite/v2/rate_limits.rs .
+
+Service owns authenticated bounded GET transport, 401 token refresh and typed provider detail parsing. UsageMonitor owns scheduling, transient observation state, independent errors and fallback to a known usage-summary count when detail fails. The existing <=1 MiB response limit, 15-second request timeout, account-scoped credentials and serialized monitor gate are reused. Details add one GET per scheduled/manual account observation. No consume/redeem implementation or UI exists. Credential and history storage schemas are unchanged; reset detail observations are in memory and reloaded after restart.
+
+The account panel renders available entries sorted by expiry instant, with undated entries last. Unknown statuses are retained at the provider boundary and are not reclassified as available. Count comes from the provider rather than the number of rows. Missing dates explicitly remain unprovided. Observation time, stale/paused state and independent detail errors remain visible. At most five rows initially render; more can be expanded. Example: three available vouchers show 3 and three chronological expiry timestamps in the Mac local timezone.
+
+## Failure modes
+A detail HTTP/parse failure cannot turn quota success into failure. A known usage-summary count is retained with its actual quota observation time, expiry details become unavailable and a separate error appears. If both reads provide no count, the count remains unknown rather than zero. No past valid detail set is presented as freshly retrieved after a failed read. A still-available entry whose expiry has elapsed is labeled as needing refresh; the provider count is never silently recalculated.
+
+## Verification
+17 frontend product/monitoring tests passed (including ordered dates, missing dates, future/redeemed statuses, zero, unknown, stale and partial failures); 7 desktop Rust tests passed with real local HTTP fixture requests checking GET route, account headers, partial detail failure, malformed expiry and existing monitor throttle; 11 existing service workflow tests passed, including token rotation and usage cancellation. The latter run uses the legacy-relay test feature only; the distributed desktop retains default features and monitoring-only behavior. TypeScript, frontend ESLint, Rust Clippy with -D warnings and strict OpenSpec change validation passed.
+
+macOS preview bundle built successfully (40.41 MiB; existing large-JavaScript-chunk warning remains). Actual native-app refresh succeeded for both connected accounts: one returned 3 available vouchers and three dated entries, the other 2 and two dated entries. Chronological dates, counts, local timezone note and independent account headers were observed in accessibility state and screenshot. No voucher was redeemed and no generation request was sent. Source/assets/app backups exist under .local/backups/reset-credit-monitor-*; publication does not rewrite app data. The regular usage monitor continues its authorized existing observation persistence.
+
+Cold/warm end-to-end token cost, elapsed-time comparison, CPU time and peak process-family memory were not benchmarked. The extra GET per account is a known network cost; no speed improvement is claimed.

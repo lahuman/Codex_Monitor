@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   label:
+    if: github.repository == 'Soju06/codex-lb'
     runs-on: ubuntu-24.04
     steps:
       - name: Add issue classification

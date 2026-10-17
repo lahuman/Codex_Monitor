@@ -1,3 +1,5 @@
+> This page retains the upstream codex-lb service documentation. For the current Codex Monitor desktop app, start with the [Monitor documentation](monitor/index.md). Proxy, Docker and API-key features below describe the upstream service.
+
 # codex-lb
 
 Load balancer for ChatGPT accounts. Pool multiple accounts, track usage, manage API keys, view everything in a dashboard.

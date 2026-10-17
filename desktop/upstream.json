@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Soju06/codex-lb",
+  "commit": "f8ffbac2099a113fba54dfd8d77774f5bca80ffa",
+  "backend": "rust-only",
+  "initial_target": "aarch64-apple-darwin",
+  "compatibility_status": "not-verified"
+}

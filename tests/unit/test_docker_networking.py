@@ -22,7 +22,7 @@ def test_stock_compose_uses_user_defined_default_bridge(compose_name: str) -> No
 
 
 def test_standalone_docker_examples_use_named_bridge() -> None:
-    readme = (_REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    readme = (_REPO_ROOT / "README.upstream.md").read_text(encoding="utf-8")
     standalone_launches = readme.count("docker run -d --name codex-lb")
     portable_launches = readme.count("--network codex-lb-net")
     host_network_launches = readme.count("--network host")
