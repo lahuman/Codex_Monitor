@@ -8,9 +8,9 @@ Windows 10 / 11 **x64**를 대상으로 합니다. 같은 React 대시보드와 
 
 ## GitHub에서 설치 파일 받기
 
-1. 소스를 저장소의 `main`에 올리면 `Windows desktop` 워크플로가 관련 변경에서 실행됩니다. Actions → **Windows desktop** → **Run workflow**로 수동 실행할 수도 있습니다.
-2. 성공한 실행의 Artifacts에서 **Codex-Monitor-windows-x64**를 받습니다. Artifacts 다운로드에는 GitHub 로그인이 필요할 수 있습니다. 보존 기간은 30일입니다.
-3. 압축을 풀고 `SHA256SUMS.txt`의 값과 설치 파일을 대조합니다.
+1. 소스를 저장소의 `main`에 올리면 `Windows desktop` 워크플로가 관련 변경에서 실행됩니다. Actions → **Windows desktop** → **Run workflow**에서 `main`을 선택해 수동 실행할 수도 있습니다.
+2. 테스트·패키징이 성공하면 **Publish Windows prerelease** 작업이 같은 실행의 설치 파일을 받아 **Releases**에 자동 등록합니다. 태그는 `desktop-v<버전>-windows-x64`이며 **Pre-release**로 표시됩니다. PR·다른 브랜치·다른 저장소의 실행은 공개하지 않습니다.
+3. Releases에서 `.exe`와 `SHA256SUMS-windows-x64.txt`를 받아 해시를 대조합니다. 메타데이터는 `release-windows-x64.json`입니다. Actions의 **Codex-Monitor-windows-x64** Artifact도 30일간 유지되며, 이 ZIP 안에서는 기존 이름 `SHA256SUMS.txt`, `release.json`을 사용합니다. Artifact 다운로드에는 GitHub 로그인이 필요할 수 있습니다.
 
 ```powershell
 Get-FileHash .\Codex-Monitor-0.1.10-windows-x64-setup.exe -Algorithm SHA256
@@ -20,7 +20,7 @@ Get-FileHash .\Codex-Monitor-0.1.10-windows-x64-setup.exe -Algorithm SHA256
 5. WebView2가 필요하면 설치 프로그램이 Microsoft 부트스트래퍼를 내려받습니다. 최초 설치 시 인터넷이 필요할 수 있습니다. 런타임을 건너뛰는 구성은 사용하지 않습니다.
 6. 앱에서 계정 연결 후 대시보드를 엽니다. 원하는 브라우저로 로그인 링크를 복사할 수 있습니다.
 
-코드 서명 인증서는 구성하지 않았습니다. 서명된 공식 배포로 소개하지 않으며 Windows SmartScreen의 인식 여부는 별도입니다. 공개 Releases에 파일을 올리기 전 실제 Windows PC의 설치와 제거를 확인하세요.
+코드 서명 인증서는 구성하지 않았습니다. 서명된 공식 배포로 소개하지 않으며 Windows SmartScreen의 인식 여부는 별도입니다. 자동 등록된 Pre-release는 실제 PC 설치 검증 완료를 뜻하지 않습니다. 정식 배포로 전환하기 전 Windows PC에서 설치·제거·업데이트를 확인하세요.
 
 ## 소스에서 빌드
 
@@ -74,3 +74,13 @@ desktop/releases/0.1.10/windows-x64/
 Windows는 트레이 제목 문자열을 표시하지 않으므로, macOS의 상시 텍스트 대신 아이콘·툴팁·메뉴를 사용합니다.
 
 참고: [Tauri Windows 설치 파일](https://v2.tauri.app/distribute/windows-installer/) · [Tauri 전제 조건](https://v2.tauri.app/start/prerequisites/)
+
+## Releases 자동 등록과 재실행
+
+빌드 작업은 읽기 권한을 유지하고, 성공한 `main` 빌드의 별도 공개 작업만 `contents: write`를 사용합니다. 별도 개인 토큰을 저장할 필요 없이 Actions의 기본 토큰을 사용합니다. 조직 정책·태그 규칙이 쓰기를 막는 경우에는 해당 정책에 맞는 권한 검토가 필요합니다.
+
+등록 전 설치 파일 이름·크기·SHA-256, 체크섬 문서, 버전·제품·x64 타깃을 확인합니다. 현재 `main` 커밋에 전용 경량 태그를 만들고 초안 릴리스에 세 파일을 올린 뒤, 업로드한 바이트까지 검증된 경우에만 Pre-release로 공개합니다. 같은 버전의 Mac 배포 자산과 이름이 충돌하지 않도록 문서 자산에 Windows 접미사를 붙입니다. Latest 정식 릴리스로 지정하지 않습니다.
+
+같은 커밋으로 재시도하면 부분 업로드된 초안을 이어서 완성하거나, 이미 완성된 릴리스를 검증하고 종료합니다. 태그가 다른 커밋을 가리키거나 자산 내용이 다르면 기존 파일을 교체하지 않습니다. 이때 데스크톱 버전을 올린 뒤 빌드해야 합니다. 빌드 도중 `main`이 갱신됐다면 새 커밋의 빌드를 사용합니다.
+
+빌드가 초록색이어도 공개 작업이 실패하면 Releases는 생성되지 않거나 초안으로 남을 수 있습니다. **Publish Windows prerelease** 로그를 확인하세요. 로컬 워크플로 수정은 GitHub의 `main`에 커밋·푸시한 뒤 실행되는 빌드부터 적용됩니다.

@@ -79,16 +79,52 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo test --locked -p codex-lb-desktop --bin codex-lb-desktop
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Release publication contracts
+        run: node --test desktop/scripts/publish-windows-release.test.mjs
       - name: Frontend tests
         run: |
           bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx src/desktop/reset-credits.test.tsx
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Package NSIS installer
         run: npm --prefix desktop run package:windows
+      - name: Resolve packaged artifact directory
+        id: packaged
+        run: |
+          $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          "directory=desktop/releases/$version/windows-x64" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Upload versioned installer and checksums
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: Codex-Monitor-windows-x64
-          path: desktop/releases/*/windows-x64/
+          path: ${{ steps.packaged.outputs.directory }}
           if-no-files-found: error
           retention-days: 30
+
+  publish:
+    name: Publish Windows prerelease
+    needs: package
+    if: github.repository == 'lahuman/Codex_Monitor' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Download this run's Windows artifacts
+        uses: actions/download-artifact@fc02353415da80201a0da48ab47022efd7725d11
+        with:
+          name: Codex-Monitor-windows-x64
+          path: ${{ runner.temp }}/codex-monitor-windows-release
+      - name: Publish verified installer and checksums
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        env:
+          ARTIFACT_DIRECTORY: ${{ runner.temp }}/codex-monitor-windows-release
+        with:
+          script: |
+            const { pathToFileURL } = await import('node:url');
+            const moduleURL = pathToFileURL(`${process.env.GITHUB_WORKSPACE}/desktop/scripts/publish-windows-release.mjs`);
+            const { publishWindowsRelease } = await import(moduleURL.href);
+            await publishWindowsRelease({ github, context, core, artifactDirectory: process.env.ARTIFACT_DIRECTORY });
