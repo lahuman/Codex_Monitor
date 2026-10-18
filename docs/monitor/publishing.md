@@ -29,12 +29,12 @@ cd desktop
 npm run package:macos
 ```
 
-현재 버전 `0.1.9`의 Apple Silicon 결과 경로 예:
+현재 버전 `0.1.10`의 Apple Silicon 결과 경로 예:
 
 ```text
-desktop/releases/0.1.9/macos-arm64/
-├── Codex-Monitor-0.1.9-macos-arm64.dmg
-├── Codex-Monitor-0.1.9-macos-arm64.zip
+desktop/releases/0.1.10/macos-arm64/
+├── Codex-Monitor-0.1.10-macos-arm64.dmg
+├── Codex-Monitor-0.1.10-macos-arm64.zip
 ├── SHA256SUMS.txt
 └── release.json
 ```
@@ -53,7 +53,7 @@ shasum -a 256 -c SHA256SUMS.txt
 
 ## GitHub Releases 작성
 
-소스와 문서를 올린 뒤 새 릴리스를 작성하고, 앱 버전에 맞는 태그·제목을 사용합니다. 예: `v0.1.9`, `Codex Monitor 0.1.9`.
+소스와 문서를 올린 뒤 새 릴리스를 작성하고, 앱 버전에 맞는 태그·제목을 사용합니다. 예: `v0.1.10`, `Codex Monitor 0.1.10`.
 
 첨부 대상은 DMG, ZIP, `SHA256SUMS.txt`, `release.json`입니다. 릴리스 본문에는 다음을 기록합니다.
 

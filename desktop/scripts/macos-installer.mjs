@@ -10,6 +10,7 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { verifyMacBundle } from "./macos-verification.mjs";
+import { installerGuideResource } from "./macos-installation-guide.mjs";
 function command(program, args) {
   const result = spawnSync(program, args, { encoding: "utf8" });
   if (result.error || result.status !== 0)
@@ -31,6 +32,7 @@ export async function buildMacInstaller({
   temporary,
   config,
   architecture,
+  guideHTML,
 }) {
   const work = await mkdtemp(path.join(temporary, ".pkg-build-"));
   try {
@@ -89,6 +91,9 @@ export async function buildMacInstaller({
       component,
       distribution,
     ]);
+    const resources = path.join(work, "resources");
+    await mkdir(resources);
+    await writeFile(path.join(resources, installerGuideResource), guideHTML);
     const titledDistribution = path.join(work, "Distribution.titled");
     command("/usr/bin/xsltproc", [
       "--nonet",
@@ -103,6 +108,8 @@ export async function buildMacInstaller({
     command("/usr/bin/productbuild", [
       "--distribution",
       titledDistribution,
+      "--resources",
+      resources,
       "--package-path",
       work,
       output,
@@ -114,6 +121,12 @@ export async function buildMacInstaller({
       path.join(work, "expanded"),
     );
     command("/usr/bin/diff", ["-qr", app, restored]);
+    const embedded = await readFile(
+      path.join(work, "expanded/Resources", installerGuideResource),
+      "utf8",
+    );
+    if (embedded !== guideHTML)
+      throw new Error("Installer guide differs from DMG guide");
     return {
       file: path.basename(output),
       signing: "unsigned",
@@ -138,6 +151,18 @@ export async function verifyMacInstaller(file, config, architecture, expanded) {
     distribution = path.join(expanded, "Distribution");
   const checks = [
     [distribution, "string(/installer-gui-script/title)", config.productName],
+    [distribution, "count(/installer-gui-script/welcome)", "1"],
+    [distribution, "count(/installer-gui-script/conclusion)", "1"],
+    [
+      distribution,
+      "string(/installer-gui-script/welcome/@file)",
+      installerGuideResource,
+    ],
+    [
+      distribution,
+      "string(/installer-gui-script/conclusion/@file)",
+      installerGuideResource,
+    ],
     [info, "string(/pkg-info/@identifier)", `${config.identifier}.installer`],
     [info, "string(/pkg-info/@version)", config.version],
     [info, "string(/pkg-info/@install-location)", "/Applications"],
@@ -148,6 +173,16 @@ export async function verifyMacInstaller(file, config, architecture, expanded) {
   for (const [xml, query, expected] of checks)
     if (xpath(xml, query) !== expected)
       throw new Error(`Invalid installer contract: ${query}`);
+  const guide = await readFile(
+    path.join(expanded, "Resources", installerGuideResource),
+    "utf8",
+  );
+  if (
+    !guide.includes("https://support.apple.com/ko-kr/102445") ||
+    !guide.includes("Open Anyway") ||
+    !guide.includes(config.version)
+  )
+    throw new Error("Installer trust guidance missing");
   const arches = xpath(
     distribution,
     "string(/installer-gui-script/options/@hostArchitectures)",

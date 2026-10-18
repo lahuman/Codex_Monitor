@@ -30,7 +30,7 @@ Quota observations are not token counts or billing totals. Unknown values remain
 | Windows 10 / 11 x64 | NSIS packaging and native CI configured; native CI execution and interactive PC verification pending |
 | Linux | No current distribution or runtime verification |
 
-Current app version: **0.1.9**. Configured minimum: **macOS 13.3**. Version 0.1.1 adds full-bundle ad-hoc signing. These artifacts are not Developer ID signed/notarized releases and may still require first-launch approval. [Mac installation diagnostics](docs/monitor/macos-installation.md)
+Current app version: **0.1.10**. Configured minimum: **macOS 13.3**. Version 0.1.1 adds full-bundle ad-hoc signing. These artifacts are not Developer ID signed/notarized releases and may still require first-launch approval. [Mac installation diagnostics](docs/monitor/macos-installation.md)
 
 ## Install or build
 

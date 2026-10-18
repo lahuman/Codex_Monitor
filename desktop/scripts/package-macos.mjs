@@ -18,6 +18,11 @@ import path from "node:path";
 import { buildMacInstaller, verifyMacInstaller } from "./macos-installer.mjs";
 import { verifyMacBundle } from "./macos-verification.mjs";
 
+import {
+  macInstallationGuide,
+  installationGuideFile,
+} from "./macos-installation-guide.mjs";
+
 const desktop = fileURLToPath(new URL("../", import.meta.url));
 const root = path.dirname(desktop);
 function command(program, args, capture = false) {
@@ -141,7 +146,10 @@ async function main() {
       path.join(desktop, "scripts/diagnose-macos.command"),
       path.join(installer, "Diagnose-Codex-Monitor.command"),
     );
+    const guide = macInstallationGuide(config, signing);
+    await writeFile(path.join(installer, installationGuideFile), guide.html);
     const installerPackage = await buildMacInstaller({
+      guideHTML: guide.html,
       app: copiedApp,
       output: path.join(installer, "설치하기.pkg"),
       temporary,
@@ -151,7 +159,7 @@ async function main() {
     await symlink("/Applications", path.join(installer, "Applications"));
     await writeFile(
       path.join(installer, "Installation.txt"),
-      `${productName} ${version}\n\n설치 진행률 보기: 설치하기.pkg를 더블클릭하세요. macOS 설치 프로그램에서 진행 막대와 완료 화면을 보여줍니다.\n드래그 설치: 앱을 Applications 폴더로 드래그할 수도 있습니다. 복사 진행 표시는 Finder가 관리합니다.\n기존 앱이 실행 중이면 종료한 후 교체하세요.\n앱 교체 후에도 기존 계정과 모니터링 데이터는 유지됩니다.\n\nInstall with progress: open 설치하기.pkg in macOS Installer. The package is unsigned; the app is ad-hoc signed.\nAlternatively drag the app to Applications (Finder controls copy progress). Quit the running app before replacing it.\nRequires macOS ${config.bundle.macOS.minimumSystemVersion} or later.\nArchitecture: ${architecture}. Intel Macs require an x86_64 or universal build.\n\nSigning: ${signing.kind}; Gatekeeper: ${signing.gatekeeper.status}; stapled notarization ticket: ${signing.notarizationTicket.status}.\nAd-hoc signing does not establish developer identity or Apple notarization.\nIf installation fails, run: bash Diagnose-Codex-Monitor.command "/Applications/${productName}.app"\nThe diagnostic only reads app/OS metadata and does not change security settings or access accounts.\n`,
+      `${guide.text}\nDMG 안내: ${installationGuideFile}\n\n설치 진행률 보기: 설치하기.pkg를 더블클릭하세요. macOS 설치 프로그램에서 진행 막대와 완료 화면을 보여줍니다.\n드래그 설치: 앱을 Applications 폴더로 드래그할 수도 있습니다. 복사 진행 표시는 Finder가 관리합니다.\n기존 앱이 실행 중이면 종료한 후 교체하세요.\n앱 교체 후에도 기존 계정과 모니터링 데이터는 유지됩니다.\n\nInstall with progress: open 설치하기.pkg in macOS Installer. The package is unsigned; the app is ad-hoc signed.\nAlternatively drag the app to Applications (Finder controls copy progress). Quit the running app before replacing it.\nRequires macOS ${config.bundle.macOS.minimumSystemVersion} or later.\nArchitecture: ${architecture}. Intel Macs require an x86_64 or universal build.\n\nSigning: ${signing.kind}; Gatekeeper: ${signing.gatekeeper.status}; stapled notarization ticket: ${signing.notarizationTicket.status}.\nAd-hoc signing does not establish developer identity or Apple notarization.\nIf installation fails, run: bash Diagnose-Codex-Monitor.command "/Applications/${productName}.app"\nThe diagnostic only reads app/OS metadata and does not change security settings or access accounts.\n`,
     );
     command("/usr/bin/ditto", [
       "-c",
@@ -197,6 +205,11 @@ async function main() {
         (await sha256(path.join(installer, "설치하기.pkg")))
       )
         throw new Error("Mounted installer package mismatch");
+      if (
+        (await readFile(path.join(mount, installationGuideFile), "utf8")) !==
+        guide.html
+      )
+        throw new Error("Mounted installation guide mismatch");
       const expandedPackage = path.join(temporary, ".pkg-verification");
       await verifyMacInstaller(
         mountedPackage,

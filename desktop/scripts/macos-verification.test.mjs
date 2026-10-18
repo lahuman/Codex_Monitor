@@ -173,6 +173,39 @@ test(
         metadata.architecture,
         path.join(temporary, "expanded"),
       );
+      const {
+        installationGuideFile,
+        installerGuideResource,
+        macInstallationGuide,
+      } = await import("./macos-installation-guide.mjs");
+      const expectedGuide = macInstallationGuide(config, metadata.signing);
+      const dmgGuide = await readFile(
+        path.join(mount, installationGuideFile),
+        "utf8",
+      );
+      assert.equal(dmgGuide, expectedGuide.html);
+      assert.equal(
+        await readFile(
+          path.join(temporary, "expanded/Resources", installerGuideResource),
+          "utf8",
+        ),
+        dmgGuide,
+      );
+      const distribution = path.join(temporary, "expanded/Distribution");
+      for (const element of ["welcome", "conclusion"]) {
+        assert.equal(
+          command("/usr/bin/xmllint", [
+            "--xpath",
+            `string(/installer-gui-script/${element}/@file)`,
+            distribution,
+          ]).trim(),
+          installerGuideResource,
+        );
+      }
+      assert.match(
+        await readFile(path.join(mount, "Installation.txt"), "utf8"),
+        /Open Anyway/,
+      );
       const choices = command("/usr/sbin/installer", [
         "-showChoicesXML",
         "-pkg",

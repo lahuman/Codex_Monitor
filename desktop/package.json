@@ -1,6 +1,6 @@
 {
   "name": "codex-lb-desktop",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "scripts": {
     "dev": "tauri dev",
@@ -12,7 +12,7 @@
     "build:windows": "tauri build --target x86_64-pc-windows-msvc --bundles nsis -- --locked",
     "package:windows": "node scripts/package-windows.mjs",
     "test:packaging": "node --test scripts/pe.test.mjs",
-    "test:macos-packaging": "node --test scripts/macos-verification.test.mjs"
+    "test:macos-packaging": "node --test scripts/macos-installation-guide.test.mjs scripts/macos-verification.test.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.3"

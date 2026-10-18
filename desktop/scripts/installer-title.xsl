@@ -9,6 +9,8 @@
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
       <title><xsl:value-of select="$product"/></title>
+      <welcome file="installation-guide.html" mime-type="text/html"/>
+      <conclusion file="installation-guide.html" mime-type="text/html"/>
       <xsl:apply-templates select="node()"/>
     </xsl:copy>
   </xsl:template>

@@ -631,7 +631,7 @@ dependencies = [
 
 [[package]]
 name = "codex-lb-desktop"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "block2",
  "chrono",

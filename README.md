@@ -32,7 +32,7 @@
 | Windows 10 / 11 x64 | NSIS 설치 파일 빌드·테스트 자동화 준비; 네이티브 CI 실행과 실제 PC 검증 대기 |
 | Linux | 현재 배포 파일과 실행 검증 없음 |
 
-현재 앱 버전은 **0.1.9**, macOS 최소 시스템 설정은 **13.3**입니다. `0.1.1`부터 앱 전체 자체 서명(Ad-hoc)을 적용합니다. Developer ID 서명·Apple 공증은 미적용이며 첫 실행 시 macOS 승인이 필요할 수 있습니다. [Mac 설치 문제 확인](docs/monitor/macos-installation.md)
+현재 앱 버전은 **0.1.10**, macOS 최소 시스템 설정은 **13.3**입니다. `0.1.1`부터 앱 전체 자체 서명(Ad-hoc)을 적용합니다. Developer ID 서명·Apple 공증은 미적용이며 첫 실행 시 macOS 승인이 필요할 수 있습니다. [Mac 설치 문제 확인](docs/monitor/macos-installation.md)
 
 ## 설치와 시작
 
