@@ -6,13 +6,13 @@
 
 GitHub의 About 설명에 사용할 수 있는 문구입니다.
 
-> Codex 계정별 잔여 한도와 초기화권 만료일을 확인하는 Rust·Tauri 기반 macOS 모니터링 앱. codex-lb에서 출발한 파생 프로젝트.
+> Codex 계정별 잔여 한도와 초기화권 만료일을 확인하는 Rust·Tauri 기반 데스크톱 모니터링 앱. codex-lb에서 출발한 파생 프로젝트.
 
 영문:
 
-> A Rust/Tauri macOS dashboard for Codex account quotas and reset-voucher expiry dates, derived from codex-lb.
+> A Rust/Tauri desktop dashboard for Codex account quotas and reset-voucher expiry dates, derived from codex-lb.
 
-주제 태그 후보: `codex`, `tauri`, `rust`, `macos`, `desktop`, `usage-monitor`, `dashboard`.
+주제 태그 후보: `codex`, `tauri`, `rust`, `macos`, `windows`, `desktop`, `usage-monitor`, `dashboard`.
 
 ## 게시할 소스와 문서
 
@@ -87,3 +87,14 @@ Mac 빌드는 `macos-15`의 arm64 실행 환경을 확인한 뒤 진행합니다
 - 업로드 전 검토한 소스와 아이콘만 커밋하고 `.local/`, `target/`, `desktop/releases/`, 앱 데이터 디렉터리는 포함하지 않습니다. GitHub 업로드와 실제 Pages 설정은 저장소 소유자가 진행합니다.
 
 Mac 설치 실패 시 [서명·호환성 진단 안내](macos-installation.md)를 사용하세요. DMG에는 읽기 전용 진단 스크립트도 포함됩니다.
+
+## Pre-release를 정식 릴리스로 전환 {#stable-release}
+
+1. [Releases](https://github.com/lahuman/Codex_Monitor/releases)에서 설치 테스트를 마친 버전을 선택하고 **Edit**(연필 아이콘)을 누릅니다. 저장소 쓰기 권한이 필요합니다.
+2. **This is a pre-release** 체크를 해제합니다.
+3. 최신 권장 배포로 지정하려면 **Set as latest release**를 선택합니다.
+4. **Update release**를 누릅니다.
+
+태그와 기존 DMG·ZIP·EXE를 그대로 유지하므로 다시 빌드하거나 업로드할 필요가 없습니다. 새 버전은 자동화가 Pre-release로 생성합니다. 같은 커밋으로 재실행할 때 이미 공개된 파일이 모두 일치하면 정식 릴리스 상태를 되돌리지 않습니다. 코드가 달라졌다면 버전을 올려 새 릴리스로 배포합니다.
+
+참고: [GitHub 릴리스 관리](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).

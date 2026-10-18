@@ -2,11 +2,11 @@
 
 > 문서 계약: [monitor-documentation](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/monitor-documentation/spec.md)
 
-Codex Monitor는 Codex 계정의 한도·초기화권·관측 이력을 확인하는 설치형 데스크톱 앱입니다. 현재 실행·패키징 검증 대상은 macOS Apple Silicon입니다.
+Codex Monitor는 Codex 계정의 한도·초기화권·관측 이력을 확인하는 설치형 데스크톱 앱입니다. macOS Apple Silicon은 로컬 실행·패키징을 검증했으며, Windows x64와 Mac의 빌드·테스트·통합 Releases 등록 자동화를 제공합니다. 실제 Windows PC의 설치·로그인·트레이 검증은 별도로 확인합니다.
 
 | 읽고 싶은 내용 | 문서 |
 | --- | --- |
-| 잔여율, 초기화 시각, 알림, 그래프의 의미 | [기능과 지표](features.md) |
+| 계정별 메뉴 막대, 잔여율 색상, 최근 1·3·6시간과 24시간 차트, 초기화권 경고 | [기능과 지표](features.md) |
 | 실행, 빌드, 테스트, 코드 구조 | [개발 안내](development.md) |
 | 원본 프로젝트, 디자인 모티브와 재사용 범위 | [출처와 크레딧](provenance.md) |
 | GitHub 소개 문구, 릴리스 파일과 게시 절차 | [게시 안내](publishing.md) |
