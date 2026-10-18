@@ -11,10 +11,10 @@ This project is derived from [Soju06/codex-lb](https://github.com/Soju06/codex-l
 ## Features
 
 - Per-account remaining quota, reset times, plan and monitoring status.
-- Available banked reset-voucher counts and individual expiry dates, sorted earliest first.
-- Colored account indicators in the macOS menu bar, or a Windows tray icon with quota tooltip/menu; monitoring continues when the window is closed.
+- Banked reset-voucher counts, expiry dates/countdowns and in-app warnings for less than seven days remaining, with urgent emphasis at 24 hours or less.
+- Independent two-row account nickname/quota items and a compact chart panel in the macOS menu bar, or a Windows tray icon with quota tooltip/menu; monitoring continues when the window is closed.
 - Automatic provider reads at least 60 seconds apart per account, plus manual refresh.
-- Up to 24 hours of observed quota history and comparable one-hour changes in percentage points.
+- Up to 24 hours of observed quota history and comparable 1/3/6-hour changes in percentage points.
 - Configurable per-account, in-app low-quota alerts.
 - Device-code login with copyable URL/code, user-selected auth.json import, pause/resume and disconnect.
 - Light/dark themes and an app-information dialog.
@@ -30,7 +30,7 @@ Quota observations are not token counts or billing totals. Unknown values remain
 | Windows 10 / 11 x64 | NSIS packaging and native CI configured; native CI execution and interactive PC verification pending |
 | Linux | No current distribution or runtime verification |
 
-Current app version: **0.1.0**. Configured minimum: **macOS 13.3**. These artifacts are not represented as Developer ID signed/notarized releases.
+Current app version: **0.1.9**. Configured minimum: **macOS 13.3**. Version 0.1.1 adds full-bundle ad-hoc signing. These artifacts are not Developer ID signed/notarized releases and may still require first-launch approval. [Mac installation diagnostics](docs/monitor/macos-installation.md)
 
 ## Install or build
 

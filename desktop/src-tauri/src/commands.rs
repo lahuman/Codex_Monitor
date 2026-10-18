@@ -1,7 +1,7 @@
 use crate::DesktopState;
 use codex_lb_server::business::{AccountSummary, DeviceView, LoginStatus, Service};
 use std::sync::Arc;
-use tauri::State;
+use tauri::{Manager, State};
 use tauri_plugin_opener::OpenerExt;
 fn service(state: &DesktopState) -> Result<Arc<Service>, String> {
     if state.exiting.load(std::sync::atomic::Ordering::SeqCst) {
@@ -94,4 +94,57 @@ pub fn configure_alert(
         return Err("계정을 찾을 수 없습니다.".into());
     }
     state.usage.configure_alert(&id, enabled, threshold)
+}
+
+#[tauri::command]
+pub fn set_account_nickname(
+    id: String,
+    nickname: String,
+    state: State<'_, DesktopState>,
+) -> Result<(), String> {
+    let service = service(&state)?;
+    if !service
+        .dashboard()
+        .map_err(|e| e.to_string())?
+        .accounts
+        .iter()
+        .any(|a| a.id == id)
+    {
+        return Err("계정을 찾을 수 없습니다.".into());
+    }
+    state.usage.set_nickname(&id, &nickname)
+}
+#[tauri::command]
+pub fn show_dashboard(app: tauri::AppHandle) {
+    if let Some(panel) = app.get_webview_window("menubar") {
+        let _ = panel.hide();
+    }
+    crate::show_window(&app);
+}
+#[tauri::command]
+pub fn hide_monitor_panel(app: tauri::AppHandle) -> Result<(), String> {
+    app.get_webview_window("menubar")
+        .map_or(Ok(()), |w| w.hide().map_err(|e| e.to_string()))
+}
+
+#[tauri::command]
+pub fn panel_account(app: tauri::AppHandle) -> Option<String> {
+    crate::panel::selected(&app)
+}
+#[tauri::command]
+pub fn select_panel_account(
+    app: tauri::AppHandle,
+    id: String,
+    state: State<'_, DesktopState>,
+) -> Result<(), String> {
+    if !service(&state)?
+        .dashboard()
+        .map_err(|e| e.to_string())?
+        .accounts
+        .iter()
+        .any(|a| a.id == id)
+    {
+        return Err("계정을 찾을 수 없습니다.".into());
+    }
+    crate::panel::select(&app, id).map_err(|e| e.to_string())
 }

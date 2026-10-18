@@ -1,3 +1,4 @@
+import { NicknameEditor } from "./nickname-editor";
 import { MonitoringInsights, MonitoringSummary } from "./insights";
 import { QuotaChart, CopyField } from "./components";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -42,7 +43,7 @@ export function DesktopApp() {
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [observedAt, setObservedAt] = useState(0);
+  const [now, setNow] = useState(() => Date.now() / 1000);
   const [device, setDevice] = useState<Device | null>(null),
     [loginOpen, setLoginOpen] = useState(false),
     [deleteId, setDeleteId] = useState<string | null>(null);
@@ -61,13 +62,17 @@ export function DesktopApp() {
     try {
       const raw = await invoke("dashboard");
       setData(SnapshotSchema.parse(raw));
-      setObservedAt(Date.now());
+      setNow(Date.now() / 1000);
     } finally {
       reading.current = false;
     }
   }, []);
   useEffect(() => {
-    const load = () => void reload().catch((e) => setError(String(e)));
+    const load = () => {
+      // Freshness/countdowns must advance even when local IPC fails or is pending.
+      setNow(Date.now() / 1000);
+      void reload().catch((e) => setError(String(e)));
+    };
     load();
     const timer = setInterval(() => {
       if (!document.hidden) load();
@@ -294,14 +299,10 @@ export function DesktopApp() {
           <>
             {page === "dashboard" && (
               <>
-                <MonitoringSummary
-                  data={data}
-                  now={observedAt / 1000}
-                  blurred={blurred}
-                />
+                <MonitoringSummary data={data} now={now} blurred={blurred} />
                 <MonitoringInsights
                   data={data}
-                  now={observedAt / 1000}
+                  now={now}
                   blurred={blurred}
                   busy={busy}
                   onConfigure={(id, enabled, threshold) =>
@@ -393,6 +394,23 @@ export function DesktopApp() {
                               사용량 조회
                             </Button>
                           </div>
+                          <NicknameEditor
+                            key={`${a.accountId}:${data.account_labels[a.accountId]?.nickname ?? ""}`}
+                            nickname={
+                              data.account_labels[a.accountId]?.nickname ?? ""
+                            }
+                            placeholder={source.email || source.account_id}
+                            busy={busy}
+                            onSave={(nickname) =>
+                              perform(async () => {
+                                await invoke("set_account_nickname", {
+                                  id: a.accountId,
+                                  nickname,
+                                });
+                                setNotice("계정 별명을 저장했습니다.");
+                              })
+                            }
+                          />
                           <div className="space-y-3">
                             {(["primary", "secondary", "monthly"] as const)
                               .filter((period) =>
@@ -472,7 +490,9 @@ export function DesktopApp() {
           <div className="text-center text-xs text-muted-foreground space-y-2">
             <p>버전 {productVersion}</p>
             <p>기반 프로젝트: codex-lb · MIT</p>
-            <p>macOS {minimumMacOS} 이상 · Windows 10/11 (x64) · 계정 모니터링</p>
+            <p>
+              macOS {minimumMacOS} 이상 · Windows 10/11 (x64) · 계정 모니터링
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAboutOpen(false)}>

@@ -81,7 +81,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Frontend tests
         run: |
-          bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx
+          bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx src/desktop/reset-credits.test.tsx
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Package NSIS installer
         run: npm --prefix desktop run package:windows

@@ -631,9 +631,14 @@ dependencies = [
 
 [[package]]
 name = "codex-lb-desktop"
-version = "0.1.0"
+version = "0.1.9"
 dependencies = [
+ "block2",
+ "chrono",
  "codex-lb-server",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
  "serde",
  "serde_json",
  "tauri",
@@ -642,6 +647,7 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tempfile",
  "tokio",
+ "unicode-segmentation",
 ]
 
 [[package]]

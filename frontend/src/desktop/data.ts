@@ -63,8 +63,29 @@ export const SnapshotSchema = z.object({
       quota_observed_at: z.iso.datetime({ offset: true }).nullable(),
     }),
   ),
+  account_labels: z
+    .record(
+      z.string(),
+      z.object({
+        nickname: z.string().nullable(),
+        full: z.string(),
+        compact: z.string(),
+      }),
+    )
+    .default({}),
   storage_pending: z.boolean(),
   reset_credits: z.record(z.string(), ResetCreditObservationSchema),
+  voucher_urgency: z
+    .record(
+      z.string(),
+      z.object({
+        count: z.number().int().positive(),
+        expires_at: z.number().finite(),
+        observed_at: z.number().finite(),
+        valid_until: z.number().finite(),
+      }),
+    )
+    .optional(),
   usage_errors: z.record(z.string(), z.string()),
   history: z.record(z.string(), z.array(SampleSchema)),
   quota_windows: z.record(z.string(), z.array(ObservedWindowSchema)),
@@ -130,7 +151,7 @@ export function projectAccounts(data: Snapshot) {
     return {
       accountId: a.id,
       email: a.email ?? "",
-      displayName: a.email || a.account_id,
+      displayName: data.account_labels[a.id]?.full || a.email || a.account_id,
       planType: a.plan ?? "unknown",
       status: a.paused ? "paused" : "active",
       usage: {
@@ -156,7 +177,8 @@ export const LoginStatusSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("connected") }),
 ]);
 
-export async function listenOperationError(
+async function listenStringEvent(
+  name: string,
   handler: (message: string) => void,
 ): Promise<() => void> {
   const api = (
@@ -172,11 +194,18 @@ export async function listenOperationError(
     }
   ).__TAURI__;
   if (!api?.event) return () => {};
-  return api.event.listen("operation-error", (event) =>
+  return api.event.listen(name, (event) =>
     handler(
       typeof event.payload === "string"
         ? event.payload
         : "앱 작업 중 오류가 발생했습니다.",
     ),
   );
+}
+
+export function listenOperationError(handler: (message: string) => void) {
+  return listenStringEvent("operation-error", handler);
+}
+export function listenPanelAccount(handler: (id: string) => void) {
+  return listenStringEvent("panel-account-selected", handler);
 }

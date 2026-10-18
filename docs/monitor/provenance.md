@@ -43,3 +43,10 @@ Claude의 로고, 공식 브랜드 자산이나 라이선스가 필요한 상용
 OpenAI, Anthropic, Cursor 또는 원본 프로젝트의 공식 배포·보증·제휴를 나타내지 않습니다. 제품의 이름과 외형 변경으로 원본 기여를 대체하지 않습니다.
 
 [기능 설명](features.md) · [문서 목록](index.md)
+
+
+## 초기화권 만료 경고 참고 (0.1.2)
+
+추가 확인 기준은 원본 커밋 `72630bbfeee9e3b0d9acfb95e2b1e706b8b0188e`입니다. [남은 시간 포맷터](https://github.com/Soju06/codex-lb/blob/72630bbfeee9e3b0d9acfb95e2b1e706b8b0188e/frontend/src/utils/formatters.ts)는 7일 미만을 만료 임박으로 판단하고, [초기화권 대화상자](https://github.com/Soju06/codex-lb/blob/72630bbfeee9e3b0d9acfb95e2b1e706b8b0188e/frontend/src/features/accounts/components/reset-credit-confirm-dialog.tsx)는 수량·만료 날짜·카운트다운과 사용 확인 흐름을 제공합니다. [설정 화면](https://github.com/Soju06/codex-lb/blob/72630bbfeee9e3b0d9acfb95e2b1e706b8b0188e/frontend/src/features/settings/components/reset-credit-settings.tsx)에는 수량·만료 배지와 자동 사용 옵션이 있습니다. [원본 계약](https://github.com/Soju06/codex-lb/blob/72630bbfeee9e3b0d9acfb95e2b1e706b8b0188e/openspec/specs/rate-limit-reset-credits/spec.md)은 선택적 만료 5분 전 자동 사용을 정의합니다. 이는 고정 커밋의 소스 확인이며 원본 서버를 실행해 검증한 결과는 아닙니다.
+
+Codex Monitor는 7일 미만 주의 기준을 참고하고, 24시간 이하 임박 강조와 계정별 대시보드 경고를 추가했습니다. Rust의 기존 조회 결과만 사용하며 원본의 사용·자동 사용 기능은 이식하지 않았습니다.

@@ -6,6 +6,7 @@ use std::{
     io::{Read, Write},
     path::{Path, PathBuf},
 };
+use unicode_segmentation::UnicodeSegmentation;
 
 const MAX_BYTES: u64 = 8 * 1024 * 1024;
 const RETENTION: i64 = 25 * 3600;
@@ -104,11 +105,41 @@ impl Default for AlertPreference {
         }
     }
 }
+
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub struct AccountLabel {
+    pub nickname: Option<String>,
+    pub full: String,
+    pub compact: String,
+}
+fn valid_nickname(name: &str) -> bool {
+    name.len() <= 384 && name.graphemes(true).count() <= 24 && !name.chars().any(char::is_control)
+}
+pub fn account_label(account: &AccountSummary, nickname: Option<&str>) -> AccountLabel {
+    let fallback = account
+        .email
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .unwrap_or(&account.account_id);
+    let full = nickname.unwrap_or(fallback).to_owned();
+    let compact = full
+        .graphemes(true)
+        .take(if nickname.is_some() { 8 } else { 3 })
+        .collect();
+    AccountLabel {
+        nickname: nickname.map(str::to_owned),
+        full,
+        compact,
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 struct Saved {
     version: u8,
     history: BTreeMap<String, Vec<Sample>>,
     alerts: BTreeMap<String, AlertPreference>,
+    #[serde(default)]
+    nicknames: BTreeMap<String, String>,
 }
 impl Default for Saved {
     fn default() -> Self {
@@ -116,6 +147,7 @@ impl Default for Saved {
             version: 1,
             history: BTreeMap::new(),
             alerts: BTreeMap::new(),
+            nicknames: BTreeMap::new(),
         }
     }
 }
@@ -150,6 +182,8 @@ impl HistoryStore {
             let valid = data.version == 1
                 && data.history.len() <= 100
                 && data.alerts.len() <= 100
+                && data.nicknames.len() <= 100
+                && data.nicknames.values().all(|n| valid_nickname(n))
                 && data.history.values().map(Vec::len).sum::<usize>() <= MAX_SAMPLES
                 && data
                     .alerts
@@ -320,6 +354,49 @@ impl HistoryStore {
             })
             .collect()
     }
+    pub fn labels(&self, accounts: &[AccountSummary]) -> BTreeMap<String, AccountLabel> {
+        accounts
+            .iter()
+            .map(|a| {
+                (
+                    a.id.clone(),
+                    account_label(a, self.data.nicknames.get(&a.id).map(String::as_str)),
+                )
+            })
+            .collect()
+    }
+    pub fn set_nickname(&mut self, id: &str, nickname: &str) -> Result<(), String> {
+        let nickname = nickname.trim();
+        if !valid_nickname(nickname) {
+            return Err("별명은 줄바꿈 없이 최대 24글자입니다.".into());
+        }
+        if self.blocked {
+            return Err(self.issue.clone().unwrap_or_default());
+        }
+        if !nickname.is_empty()
+            && self.data.nicknames.len() >= 100
+            && !self.data.nicknames.contains_key(id)
+        {
+            return Err("별명 계정 수 제한 초과".into());
+        }
+        let previous = if nickname.is_empty() {
+            self.data.nicknames.remove(id)
+        } else {
+            self.data.nicknames.insert(id.into(), nickname.into())
+        };
+        if let Err(error) = self.persist() {
+            match previous {
+                Some(value) => {
+                    self.data.nicknames.insert(id.into(), value);
+                }
+                None => {
+                    self.data.nicknames.remove(id);
+                }
+            }
+            return Err(error);
+        }
+        Ok(())
+    }
     pub fn configure(&mut self, id: &str, enabled: bool, threshold: u8) -> Result<(), String> {
         if !(1..=100).contains(&threshold) {
             return Err("알림 기준은 1~100%입니다.".into());
@@ -415,5 +492,47 @@ mod tests {
             .set_len(MAX_BYTES + 1)
             .unwrap();
         assert!(HistoryStore::open(path).issue.is_some());
+    }
+    #[test]
+    fn nicknames_preserve_graphemes_and_survive_clear_and_restart() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("monitoring.json");
+        let mut store = HistoryStore::open(path.clone());
+        let mut a = account(1800000000, Some(51.0), 1900000000);
+        a.email = Some("가👨‍👩‍👧‍👦e\u{301}more@example.test".into());
+        assert_eq!(store.labels(&[a.clone()])[&a.id].compact, "가👨‍👩‍👧‍👦e\u{301}");
+        store.record(&a, 1800000000);
+        store.set_nickname(&a.id, "  업무 계정  ").unwrap();
+        let mut reopened = HistoryStore::open(path.clone());
+        assert_eq!(reopened.labels(&[a.clone()])[&a.id].full, "업무 계정");
+        assert_eq!(reopened.histories(&[a.clone()], 1800000000)[&a.id].len(), 1);
+        assert!(reopened.set_nickname(&a.id, "bad\nname").is_err());
+        assert!(reopened.set_nickname(&a.id, &"가".repeat(25)).is_err());
+        reopened.set_nickname(&a.id, "").unwrap();
+        assert_eq!(
+            HistoryStore::open(path).labels(&[a.clone()])[&a.id].nickname,
+            None
+        );
+    }
+    #[test]
+    fn legacy_monitoring_file_has_no_nickname_migration_requirement() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("monitoring.json");
+        fs::write(&path, r#"{"version":1,"history":{},"alerts":{}}"#).unwrap();
+        let store = HistoryStore::open(path);
+        assert!(!store.blocked);
+        let a = account(1800000000, Some(20.0), 1900000000);
+        assert_eq!(store.labels(&[a])["fixture"].compact, "wor");
+    }
+    #[test]
+    fn nickname_write_failure_does_not_change_memory_or_overwrite_corrupt_data() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("monitoring.json");
+        fs::write(&path, "invalid").unwrap();
+        let mut store = HistoryStore::open(path.clone());
+        assert!(store.set_nickname("fixture", "changed").is_err());
+        assert_eq!(fs::read_to_string(path).unwrap(), "invalid");
+        let a = account(1800000000, Some(20.0), 1900000000);
+        assert_eq!(store.labels(&[a])["fixture"].nickname, None);
     }
 }

@@ -1,3 +1,4 @@
+import configuration from "../../../desktop/src-tauri/tauri.conf.json";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -34,6 +35,7 @@ beforeEach(async () => {
     quota_windows: {},
     alert_preferences: {},
     poll_status: {},
+    account_labels: {},
     monitoring_issue: null,
     accounts: [
       {
@@ -393,6 +395,10 @@ it("shows account voucher count and ordered expiry dates, without interpreting f
   )!;
   const panel = within(account).getByRole("region", { name: "초기화권" });
   expect(within(panel).getByText("3개")).toBeInTheDocument();
+  expect(within(panel).getAllByRole("listitem")).toHaveLength(1);
+  fireEvent.click(
+    within(panel).getByRole("button", { name: "만료일 전체 보기 (3개)" }),
+  );
   const dates = within(
     within(panel).getByRole("list", { name: "초기화권 만료일" }),
   ).getAllByRole("listitem");
@@ -452,11 +458,41 @@ it("shows the release product identity and configured version in the about dialo
   expect(
     within(dialog).getByRole("heading", { name: "Codex Monitor" }),
   ).toBeInTheDocument();
-  expect(within(dialog).getByText("버전 0.1.0")).toBeInTheDocument();
-  fireEvent.click(
-    within(dialog).getByRole("button", { name: "닫기" }),
-  );
+  expect(
+    within(dialog).getByText(`버전 ${configuration.version}`),
+  ).toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole("button", { name: "닫기" }));
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
+});
+
+it("ages voucher warnings on focus even when the local snapshot request fails", async () => {
+  const milliseconds = Date.now();
+  const clock = vi.spyOn(Date, "now").mockReturnValue(milliseconds);
+  try {
+    snapshot.reset_credits["seat-one"] = {
+      available_count: 1,
+      credits: [
+        {
+          id: "soon",
+          status: "available",
+          expires_at: new Date(milliseconds + 3600000).toISOString(),
+        },
+      ],
+      observed_at: new Date(milliseconds).toISOString(),
+      error: null,
+    };
+    mount();
+    await screen.findByText(/초기화권 만료 임박/);
+    ipc.mockRejectedValue(new Error("local snapshot unavailable"));
+    clock.mockReturnValue(milliseconds + 121000);
+    fireEvent(window, new Event("focus"));
+    await waitFor(() =>
+      expect(screen.queryByText(/초기화권 만료 임박/)).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText("오래된 관측 · 갱신 필요")).toBeInTheDocument();
+  } finally {
+    clock.mockRestore();
+  }
 });

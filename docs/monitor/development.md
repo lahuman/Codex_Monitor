@@ -76,7 +76,7 @@ flowchart LR
 
 ```sh
 npm --prefix desktop run build:dashboard
-bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx
+bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx src/desktop/reset-credits.test.tsx
 bun run --cwd frontend lint src/desktop
 cargo test -p codex-lb-desktop --bin codex-lb-desktop
 cargo clippy -p codex-lb-desktop -p codex-lb-server --all-targets -- -D warnings

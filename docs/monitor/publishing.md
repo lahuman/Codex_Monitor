@@ -29,18 +29,21 @@ cd desktop
 npm run package:macos
 ```
 
-현재 버전 `0.1.0`의 Apple Silicon 결과 경로 예:
+현재 버전 `0.1.9`의 Apple Silicon 결과 경로 예:
 
 ```text
-desktop/releases/0.1.0/macos-arm64/
-├── Codex Monitor.app/
-├── Codex-Monitor-0.1.0-macos-arm64.dmg
-├── Codex-Monitor-0.1.0-macos-arm64.zip
+desktop/releases/0.1.9/macos-arm64/
+├── Codex-Monitor-0.1.9-macos-arm64.dmg
+├── Codex-Monitor-0.1.9-macos-arm64.zip
 ├── SHA256SUMS.txt
 └── release.json
 ```
 
-생성기는 실제 Mach-O 아키텍처와 앱 메타데이터를 확인하고 DMG 무결성을 검사합니다. 버전 기준은 `desktop/src-tauri/tauri.conf.json`입니다. 같은 출력 폴더가 있으면 자동으로 덮어쓰지 않습니다. 기존 산출물을 보존하거나 버전을 갱신한 뒤 다시 패키징합니다.
+배포 폴더에는 압축을 푼 `.app`을 보관하지 않습니다. DMG·ZIP 검증과 출력 확정 후 패키징 중간 사본과 빌드 `.app`을 정리합니다. 개발용으로 앱만 필요하면 `desktop`에서 `npm run build`를 실행하세요. 설치된 앱이나 사용자가 열어 둔 DMG는 건드리지 않습니다.
+
+DMG에는 `설치하기.pkg`도 포함됩니다. macOS Installer의 진행 막대·완료 화면을 사용하는 선택 경로이며, 앱 번들만 `/Applications`에 설치합니다. 패키지 재배치 검색과 사용자 정의 설치 스크립트는 비활성화합니다. PKG는 미서명이며 `release.json`의 `installer` 항목에 구분해 기록합니다.
+
+생성기는 실제 Mach-O 아키텍처와 앱 메타데이터를 확인합니다. `0.1.1`부터 원본·복사본·ZIP 재추출·읽기 전용 DMG 내부 앱의 전체 서명을 `codesign --verify --deep --strict`로 검사하며, 실패하면 산출물을 확정하지 않습니다. `release.json`에 서명 종류·공증 티켓·Gatekeeper 판정을 구분해 기록합니다. 자체 서명은 공증이나 Gatekeeper 승인을 뜻하지 않습니다. 버전 기준은 `desktop/src-tauri/tauri.conf.json`입니다. 같은 출력 폴더가 있으면 자동으로 덮어쓰지 않습니다. 기존 산출물을 보존하거나 버전을 갱신한 뒤 다시 패키징합니다.
 
 체크섬 확인은 해당 출력 폴더에서:
 
@@ -50,7 +53,7 @@ shasum -a 256 -c SHA256SUMS.txt
 
 ## GitHub Releases 작성
 
-소스와 문서를 올린 뒤 새 릴리스를 작성하고, 앱 버전에 맞는 태그·제목을 사용합니다. 예: `v0.1.0`, `Codex Monitor 0.1.0`.
+소스와 문서를 올린 뒤 새 릴리스를 작성하고, 앱 버전에 맞는 태그·제목을 사용합니다. 예: `v0.1.9`, `Codex Monitor 0.1.9`.
 
 첨부 대상은 DMG, ZIP, `SHA256SUMS.txt`, `release.json`입니다. 릴리스 본문에는 다음을 기록합니다.
 
@@ -71,3 +74,5 @@ shasum -a 256 -c SHA256SUMS.txt
 - [GitHub Pages](website.md): `Project website and docs` 워크플로가 소개 페이지와 참조 문서를 하나의 Pages artifact로 배포합니다. 저장소 Settings → Pages → Source는 **GitHub Actions**로 선택합니다.
 - 원본 Python 제품의 CI·릴리스·라벨 관리 워크플로는 `github.repository == 'Soju06/codex-lb'` 조건으로 원본 저장소에서만 실행되도록 보존합니다. 이 포크에서 실행할 워크플로는 데스크톱 Windows 빌드와 소개 페이지·문서 배포입니다.
 - 업로드 전 검토한 소스와 아이콘만 커밋하고 `.local/`, `target/`, `desktop/releases/`, 앱 데이터 디렉터리는 포함하지 않습니다. GitHub 업로드와 실제 Pages 설정은 저장소 소유자가 진행합니다.
+
+Mac 설치 실패 시 [서명·호환성 진단 안내](macos-installation.md)를 사용하세요. DMG에는 읽기 전용 진단 스크립트도 포함됩니다.

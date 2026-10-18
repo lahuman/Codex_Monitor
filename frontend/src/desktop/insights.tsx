@@ -1,3 +1,5 @@
+import { resetCreditView } from "./reset-credits-model";
+import { TriangleAlert } from "lucide-react";
 import { ResetCreditsPanel } from "./reset-credits";
 import { QuotaMeter, QuotaLegend } from "./components";
 import type { Snapshot, Sample, ObservedWindow } from "./data";
@@ -38,6 +40,14 @@ export function MonitoringSummary({
       known.some((v) => v <= pref.threshold)
     );
   });
+  const voucherAlerts = data.accounts.flatMap((account) => {
+    const warning = resetCreditView(
+      data.reset_credits[account.id],
+      now,
+      account.paused,
+    ).warning;
+    return warning ? [{ account, warning }] : [];
+  });
   return (
     <section className="space-y-3" aria-label="한도 상태 요약">
       <div className="monitor-summary">
@@ -59,6 +69,32 @@ export function MonitoringSummary({
           {data.monitoring_issue}
         </p>
       )}
+      {voucherAlerts.map(({ account, warning }) => (
+        <div
+          role="alert"
+          key={`voucher-${account.id}`}
+          className={`reset-credit-summary reset-credit-warning-${warning.level}`}
+        >
+          <TriangleAlert aria-hidden="true" size={17} />
+          <div>
+            <p className="font-medium">
+              <span className={blurred ? "blur-sm" : ""}>
+                {account.email || account.account_id}
+              </span>
+              {" · 초기화권 "}
+              {warning.level === "urgent" ? "만료 임박" : "만료 주의"}
+            </p>
+            <p className="text-xs">
+              7일 미만 {warning.count}개
+              {warning.urgentCount > 0
+                ? ` · 24시간 이하 ${warning.urgentCount}개`
+                : ""}
+              {" · 가장 빠른 만료까지 "}
+              {duration(warning.nearest.remainingSeconds!)}
+            </p>
+          </div>
+        </div>
+      ))}
       {alerts.map((account) => (
         <p
           role="alert"
@@ -75,7 +111,7 @@ export function MonitoringSummary({
     </section>
   );
 }
-function HistoryGraph({ samples, now }: { samples: Sample[]; now: number }) {
+export function HistoryGraph({ samples, now }: { samples: Sample[]; now: number }) {
   const visible = samples.filter((s) => s.at >= now - 86400 && s.at <= now);
   if (visible.length < 2)
     return (

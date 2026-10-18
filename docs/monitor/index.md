@@ -17,3 +17,5 @@ Codex Monitor는 Codex 계정의 한도·초기화권·관측 이력을 확인�
 
 - [Windows 설치·빌드](windows.md)
 - [프로젝트 웹페이지와 GitHub Pages](website.md)
+
+- [Mac 설치·서명 문제 진단](macos-installation.md)

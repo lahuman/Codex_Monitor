@@ -18,10 +18,10 @@ struct AccountPoll {
 }
 #[derive(Clone, Serialize)]
 pub struct ResetCreditObservation {
-    available_count: Option<u64>,
-    credits: Option<Vec<ResetCredit>>,
-    observed_at: Option<String>,
-    error: Option<String>,
+    pub(crate) available_count: Option<u64>,
+    pub(crate) credits: Option<Vec<ResetCredit>>,
+    pub(crate) observed_at: Option<String>,
+    pub(crate) error: Option<String>,
 }
 impl ResetCreditObservation {
     fn partial(account: &AccountSummary, error: Option<String>) -> Self {
@@ -42,9 +42,11 @@ pub struct UsageMonitor {
 }
 #[derive(Serialize)]
 pub struct Snapshot {
+    pub account_labels: std::collections::BTreeMap<String, crate::history::AccountLabel>,
     pub accounts: Vec<codex_lb_server::business::AccountSummary>,
     pub storage_pending: bool,
     pub reset_credits: HashMap<String, ResetCreditObservation>,
+    pub voucher_urgency: HashMap<String, crate::voucher_alert::VoucherUrgency>,
     pub usage_errors: HashMap<String, String>,
     pub history: std::collections::BTreeMap<String, Vec<crate::history::Sample>>,
     pub alert_preferences: std::collections::BTreeMap<String, crate::history::AlertPreference>,
@@ -77,6 +79,12 @@ impl UsageMonitor {
             history: Mutex::new(history),
             ..Self::default()
         }
+    }
+    pub fn set_nickname(&self, id: &str, nickname: &str) -> Result<(), String> {
+        self.history
+            .lock()
+            .map_err(|_| "모니터링 기록 잠금 오류")?
+            .set_nickname(id, nickname)
     }
     pub fn configure_alert(&self, id: &str, enabled: bool, threshold: u8) -> Result<(), String> {
         self.history
@@ -126,7 +134,7 @@ impl UsageMonitor {
                 )
             })
             .collect();
-        let reset_credits = accounts
+        let reset_credits: HashMap<String, ResetCreditObservation> = accounts
             .iter()
             .map(|a| {
                 let observation = polls
@@ -139,6 +147,7 @@ impl UsageMonitor {
         drop(polls);
         let history = self.history.lock().map_err(|_| "모니터링 기록 잠금 오류")?;
         Ok(Snapshot {
+            account_labels: history.labels(&accounts),
             quota_windows: accounts
                 .iter()
                 .map(|a| (a.id.clone(), crate::history::windows(a)))
@@ -147,6 +156,15 @@ impl UsageMonitor {
             alert_preferences: history.preferences(&accounts),
             monitoring_issue: history.issue.clone(),
             poll_status,
+            voucher_urgency: accounts
+                .iter()
+                .filter_map(|a| {
+                    reset_credits
+                        .get(&a.id)
+                        .and_then(|o| crate::voucher_alert::urgency(o, a.paused, now))
+                        .map(|warning| (a.id.clone(), warning))
+                })
+                .collect(),
             reset_credits,
             accounts,
             storage_pending,

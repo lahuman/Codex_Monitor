@@ -60,6 +60,7 @@ nav:
       - Features and metrics: monitor/features.md
       - Development: monitor/development.md
       - Windows: monitor/windows.md
+      - Mac installation: monitor/macos-installation.md
       - Project website: monitor/website.md
       - Provenance and credits: monitor/provenance.md
       - GitHub publication: monitor/publishing.md

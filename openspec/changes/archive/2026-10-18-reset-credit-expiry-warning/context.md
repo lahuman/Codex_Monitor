@@ -1,0 +1,17 @@
+# Context
+
+Upstream inspected at commit `72630bbfeee9e3b0d9acfb95e2b1e706b8b0188e`. `frontend/src/utils/formatters.ts` defines EXPIRING_SOON_THRESHOLD_MS as seven days and considers strictly less than that interval expiringSoon. `reset-credit-confirm-dialog.tsx` lists available vouchers and nearest expiry with countdown/color; `reset-credit-settings.tsx` provides badges, expiry badge and opt-in auto-redemption; the reset-credit spec/scheduler attempts opt-in automatic redemption within five minutes. Source inspection establishes those behaviors, not an execution test of the upstream service.
+
+This app remains read-only. It adopts the seven-day attention window and adds an inclusive 24-hour urgent level. A single reset-credit frontend projection owns status selection, sorted dates, remaining time and freshness-dependent warnings; consumers use its facts rather than independently reinterpreting raw statuses/dates. Authoritative available_count=0 overrides residual available items. Partial lists can warn about confirmed known vouchers but must retain missing-details notices. Unknown dates never mean unlimited validity.
+
+In-app warnings require an active account, known positive count, usable details, no detail error and an observation between 0 and 120 seconds old. Stale/paused/error data remains displayed as historical information, not a live alarm. Expiry at or before now is labeled elapsed/refresh-needed rather than included among future warnings or used to decrement the provider count. Quota alert preferences do not disable voucher warnings.
+
+Example: a fresh account holding vouchers expiring in six days and six hours shows two upcoming vouchers and urgent emphasis for the six-hour deadline, with both absolute dates retained. A stopped account shows only its last-observation labels. Visible UI ticks every five seconds and updates on focus even if IPC reads fail; no additional provider polling is added.
+
+## Verification
+
+41 frontend tests passed, including all seven-day/24-hour boundaries, elapsed/undated/unknown/redeemed statuses, authoritative zero, count/detail inconsistency, partial details, stale/future/missing timestamps, pause, privacy blur and focus-driven aging after IPC failure. Desktop TypeScript production build and ESLint passed. The initial production build caught a widened warning string type; the projection now explicitly binds it to its WarningLevel union. No untyped boundary cast was added.
+
+Fictional browser QA compared the prior and new UI (0 vs 1 summary alert for the same fixture), examined light/dark themes and a 390px viewport without horizontal overflow, and found no browser console errors. QA fixtures stay in a temporary harness and are excluded from publication. No real account data was used for these previews.
+
+The 0.1.2 optimized arm64 app, DMG and ZIP completed with strict full-bundle signing verification, ZIP round-trip, read-only DMG mount and checksums. Two real-app packaging/diagnostic regression tests passed. Signing remains ad-hoc with no notarization ticket and Gatekeeper rejection recorded; recipient Mac and Windows execution are not established by these tests. Existing versions remain preserved. Strict MkDocs, 85 local source/document/image links, installed Tauri JSON Schema and Windows workflow actionlint passed. Upstream review is pinned source inspection, not real upstream-service/provider verification.

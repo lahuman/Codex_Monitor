@@ -3,7 +3,11 @@
 mod commands;
 mod history;
 mod menubar;
+#[cfg(target_os = "macos")]
+mod menubar_native;
 mod monitor;
+mod panel;
+mod voucher_alert;
 use codex_lb_server::business::{Endpoints, Service};
 use std::sync::Arc;
 
@@ -16,9 +20,13 @@ struct DesktopState {
     exiting: AtomicBool,
     usage: monitor::UsageMonitor,
     monitor: std::sync::Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
+    account_trays: std::sync::Mutex<Vec<String>>,
 }
 
 fn show_window(app: &tauri::AppHandle) {
+    if let Some(panel) = app.get_webview_window("menubar") {
+        let _ = panel.hide();
+    }
     if let Some(window) = app.get_webview_window("main")
         && let Err(error) = window
             .show()
@@ -59,6 +67,11 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::dashboard,
+            commands::set_account_nickname,
+            commands::show_dashboard,
+            commands::hide_monitor_panel,
+            commands::panel_account,
+            commands::select_panel_account,
             commands::import_account,
             commands::change_account,
             commands::refresh_usage,
@@ -92,11 +105,16 @@ fn main() {
                         .unwrap_or_default(),
                 ),
                 monitor: std::sync::Mutex::new(None),
+                account_trays: std::sync::Mutex::new(Vec::new()),
             });
+            panel::install(app.handle())?;
             menubar::install(app.handle())?;
             Ok(())
         })
         .on_window_event(|window, event| {
+            if window.label() == "menubar" && matches!(event, tauri::WindowEvent::Focused(false)) {
+                panel::lost_focus(window);
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 if let Err(error) = window.hide() {

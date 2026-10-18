@@ -46,42 +46,54 @@ export function preference(data: Snapshot, id: string): AlertPreference {
 export function sampleWindow(sample: Sample, period: string) {
   return sample.windows.find((w) => w.period === period);
 }
+export type IntervalUsage =
+  | { value: number; reason: null }
+  | { value: null; reason: string };
+export function intervalUsage(
+  samples: Sample[],
+  period: string,
+  now: number,
+  hours: number,
+): IntervalUsage {
+  const missing = (reason: string): IntervalUsage => ({ value: null, reason });
+  const last = samples.at(-1);
+  if (!last || last.at > now || now - last.at > 120)
+    return missing("최신 관측 필요");
+  const target = last.at - hours * 3600;
+  const baseline = samples.findLast((s) => s.at <= target);
+  if (!baseline || target - baseline.at > 600) return missing("관측 기록 부족");
+  const before = sampleWindow(baseline, period);
+  if (
+    before?.remaining == null ||
+    before.reset_at == null ||
+    before.seconds == null
+  )
+    return missing("한도 정보 부족");
+  const between = samples.filter((s) => s.at >= baseline.at && s.at <= last.at);
+  for (let i = 0; i < between.length; i++) {
+    const window = sampleWindow(between[i], period);
+    const previous = i > 0 ? sampleWindow(between[i - 1], period) : null;
+    if (i > 0 && between[i].at - between[i - 1].at > 900)
+      return missing("관측 공백");
+    if (window?.remaining == null) return missing("한도 정보 부족");
+    if (
+      window.reset_at !== before.reset_at ||
+      window.seconds !== before.seconds ||
+      (previous?.remaining != null && window.remaining > previous.remaining)
+    )
+      return missing("초기화·한도 변경 구간");
+  }
+  return {
+    value: before.remaining - sampleWindow(last, period)!.remaining!,
+    reason: null,
+  };
+}
 export function decrease(
   samples: Sample[],
   period: string,
   now: number,
 ): number | null {
-  const last = samples.at(-1);
-  if (!last || last.at > now || now - last.at > 120) return null;
-  const target = last.at - 3600;
-  const baseline = samples.findLast((s) => s.at <= target);
-  if (!baseline || target - baseline.at > 600) return null;
-  const before = sampleWindow(baseline, period),
-    after = sampleWindow(last, period);
-  if (
-    before?.remaining == null ||
-    after?.remaining == null ||
-    before.reset_at == null ||
-    before.reset_at !== after.reset_at ||
-    before.seconds !== after.seconds
-  )
-    return null;
-  const between = samples.filter((s) => s.at >= baseline.at);
-  if (
-    between.some((s, i) => {
-      const window = sampleWindow(s, period);
-      return (
-        !window ||
-        window.remaining == null ||
-        window.reset_at !== before.reset_at ||
-        window.seconds !== before.seconds ||
-        (i > 0 && s.at - between[i - 1].at > 900)
-      );
-    })
-  )
-    return null;
-  const diff = before.remaining - after.remaining;
-  return diff < 0 ? null : diff;
+  return intervalUsage(samples, period, now, 1).value;
 }
 export function segments(samples: Sample[], period: string): Sample[][] {
   const result: Sample[][] = [];

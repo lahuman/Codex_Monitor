@@ -25,9 +25,9 @@ cd desktop
 npm run package:macos
 ```
 
-아이콘은 패키징 전에 자동 재생성됩니다. 최적화 앱은 `target/release/bundle/macos/Codex Monitor.app`에 생성됩니다. DMG·ZIP·SHA256SUMS.txt·release.json과 앱 사본은 `desktop/releases/0.1.0/macos-arm64/`에 생성됩니다. 경로의 버전은 Tauri 설정에서, 아키텍처는 실제 빌드된 실행 파일에서 가져옵니다. Intel Mac에서 빌드하면 `macos-x86_64`로 구분합니다. 현재 검증한 대상은 Apple Silicon입니다.
+아이콘은 패키징 전에 자동 재생성됩니다. DMG·ZIP·SHA256SUMS.txt·release.json만 `desktop/releases/0.1.9/macos-arm64/`에 남습니다. 검증된 배포 파일을 확정한 뒤 중간 `.app` 사본과 `target/release/bundle/macos/Codex Monitor.app`을 정리해 macOS에 같은 앱이 여러 개 표시되는 것을 방지합니다. 설치한 앱과 사용자가 마운트한 DMG는 정리하지 않습니다. 경로의 버전은 Tauri 설정에서, 아키텍처는 실제 빌드된 실행 파일에서 가져옵니다. Intel Mac에서 빌드하면 `macos-x86_64`로 구분합니다. 현재 검증한 대상은 Apple Silicon입니다.
 
-DMG를 열고 앱을 Applications 폴더로 드래그해 설치합니다. 교체 전 실행 중인 앱을 종료하세요. 기존 릴리스 폴더는 자동으로 덮어쓰지 않습니다. 다시 패키징할 때는 기존 산출물을 보존하거나 설정의 버전을 변경하세요.
+DMG 안의 `설치하기.pkg`를 열면 macOS 설치 프로그램의 진행 막대와 완료 화면으로 설치 상태를 확인할 수 있습니다. 기존처럼 앱을 Applications 폴더로 드래그할 수도 있으며, 이 경우 진행 표시는 Finder가 관리합니다. PKG 자체는 미서명입니다. 교체 전 실행 중인 앱을 종료하세요. 기존 릴리스 폴더는 자동으로 덮어쓰지 않습니다. 다시 패키징할 때는 기존 산출물을 보존하거나 설정의 버전을 변경하세요.
 
 `npm run build`는 앱만, `npm run build:preview`는 개발용 앱을 생성합니다. 아이콘 원본은 `branding/icon.svg`이며 `npm run icons`로 macOS용 크기를 재생성합니다. 앱 이름과 버전의 기준은 `src-tauri/tauri.conf.json`입니다.
 
@@ -43,3 +43,9 @@ npm --prefix desktop run package:windows
 ```
 
 Windows x64에서 실행하며, 결과는 `desktop/releases/<버전>/windows-x64/`에 생성됩니다. macOS에서 Windows 설치 파일을 생성하는 명령이 아닙니다.
+
+## macOS 배포 검증
+
+`0.1.1`부터 Tauri가 전체 앱을 자체 서명하며 패키징 중 앱·ZIP·DMG의 서명 무결성을 검증합니다. Developer ID와 공증은 별도이며, 자세한 절차는 [Mac 설치 진단](../docs/monitor/macos-installation.md)을 참고하세요.
+
+실제 빌드 산출물의 변경 탐지 회귀 검증: `npm run test:macos-packaging` (macOS 패키징 후 실행).

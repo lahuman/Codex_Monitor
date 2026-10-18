@@ -76,6 +76,7 @@ it("shows countdown, plan, poll timing, history, low-quota alert and account pre
         refreshing: false,
       },
     },
+    account_labels: {},
     monitoring_issue: null,
   });
   const configure = vi.fn();
@@ -125,6 +126,7 @@ it("excludes paused and stale accounts from low-quota alerts", () => {
     quota_windows: { fixture: sample(now, 0).windows },
     alert_preferences: {},
     poll_status: {},
+    account_labels: {},
     monitoring_issue: null,
   });
   const { rerender } = render(
@@ -157,6 +159,7 @@ it("does not count the same observation twice because of timestamp precision", (
     quota_windows: { fixture: sample(now, 49).windows },
     alert_preferences: {},
     poll_status: {},
+    account_labels: {},
     monitoring_issue: null,
   });
   const points = accountSamples(data, data.accounts[0]);

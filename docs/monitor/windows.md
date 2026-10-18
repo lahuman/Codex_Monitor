@@ -13,7 +13,7 @@ Windows 10 / 11 **x64**를 대상으로 합니다. 같은 React 대시보드와 
 3. 압축을 풀고 `SHA256SUMS.txt`의 값과 설치 파일을 대조합니다.
 
 ```powershell
-Get-FileHash .\Codex-Monitor-0.1.0-windows-x64-setup.exe -Algorithm SHA256
+Get-FileHash .\Codex-Monitor-0.1.9-windows-x64-setup.exe -Algorithm SHA256
 ```
 
 4. `Codex-Monitor-<버전>-windows-x64-setup.exe`를 실행합니다. 현재 사용자 범위로 설치하며 한국어·영어 설치 언어를 선택할 수 있습니다.
@@ -53,8 +53,8 @@ npm --prefix desktop run package:windows
 명령은 아이콘을 생성하고, 최적화 x64 앱을 빌드한 뒤 실제 앱의 PE/COFF 아키텍처를 검사합니다. NSIS 설치 파일만 선택해 버전별 폴더에 복사하고 SHA-256과 메타데이터를 기록합니다. 작업 트리나 계정 데이터는 패키징하지 않으며 이미 있는 릴리스 폴더를 덮어쓰지 않습니다.
 
 ```text
-desktop/releases/0.1.0/windows-x64/
-├── Codex-Monitor-0.1.0-windows-x64-setup.exe
+desktop/releases/0.1.9/windows-x64/
+├── Codex-Monitor-0.1.9-windows-x64-setup.exe
 ├── SHA256SUMS.txt
 └── release.json
 ```
