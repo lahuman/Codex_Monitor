@@ -93,7 +93,7 @@ jobs:
           $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
           "directory=desktop/releases/$version/windows-x64" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Upload versioned installer and checksums
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: Codex-Monitor-windows-x64
           path: ${{ steps.packaged.outputs.directory }}
@@ -145,7 +145,7 @@ jobs:
           appendFileSync(process.env.GITHUB_OUTPUT, `directory=desktop/releases/${config.version}/macos-arm64\n`);
           JS
       - name: Upload macOS archives and checksums
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: Codex-Monitor-macos-arm64
           path: ${{ steps.packaged.outputs.directory }}
