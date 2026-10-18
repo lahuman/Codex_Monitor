@@ -89,3 +89,10 @@ After successful Windows x64 and macOS arm64 test/package jobs on a main-branch 
 #### Scenario: Failed, missing or mismatched platform
 - **WHEN** either native job fails, a platform artifact is missing/corrupt, versions/architectures disagree, or a PR/non-main/fork run executes
 - **THEN** no new shared public release is published. Mac-only or Windows-only partial publication SHALL NOT occur, and modified files for an already released shared version require a desktop version bump.
+
+### Requirement: Canonical distribution branding
+Generated installation guides and release notes SHALL link to the canonical case-sensitive project website, platform guides and repository Releases. Windows installer metadata SHALL use the canonical homepage and branded header/sidebar artwork. The offline Mac guide SHALL use product typography and colors while retaining truthful signing facts and conditional security instructions without active content. Existing published artifacts SHALL remain unchanged; changed distribution content SHALL receive a new desktop version.
+
+#### Scenario: Recipient needs installation help
+- **WHEN** a recipient opens the Mac guide or a new shared release
+- **THEN** product-branded guidance links to https://lahuman.github.io/Codex_Monitor/ and its platform documentation rather than a lower-case Pages path.

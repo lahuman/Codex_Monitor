@@ -1,6 +1,6 @@
 # Mac 설치와 실행 문제 확인
 
-> 기능 계약: [desktop-release](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md)
+> 기능 계약: [desktop-release](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md)
 
 ## GitHub에서 받기
 
@@ -72,3 +72,5 @@ bash Diagnose-Codex-Monitor.command "/Applications/Codex Monitor.app"
 0.1.10부터 같은 한국어·영어 안내를 **DMG의 먼저 읽어주세요.html**, **Installation.txt**, **설치하기.pkg의 시작·완료 화면**에 포함합니다. 설치 파일 자체가 차단되어도 HTML 안내는 별도로 읽을 수 있습니다. 안내는 보안 설정을 자동으로 바꾸지 않습니다. 기준 절차는 [Apple 공식 안내](https://support.apple.com/ko-kr/102445)를 따릅니다.
 
 [설치 프로그램 시작 안내 화면](assets/macos-installer-guide.png)에서 실제 표시 예시를 확인할 수 있습니다. 긴 안내는 화면 안에서 스크롤해 읽습니다.
+
+0.1.11 설치 안내는 소개 페이지와 같은 크림색·코랄 색상, 단계별 카드와 글꼴을 사용합니다. 오프라인 안내와 설치 프로그램 시작·완료 화면에는 프로젝트·Releases·Mac 가이드의 정확한 대문자 `Codex_Monitor` 주소를 제공합니다. 기존 버전의 DMG는 그대로 보존합니다.

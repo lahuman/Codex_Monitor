@@ -34,14 +34,14 @@ Current app version: **0.1.10**. Configured minimum: **macOS 13.3**. Version 0.1
 
 ## Install or build
 
-If a matching artifact has been published on [Releases](https://github.com/lahuman/codex_Monitor/releases), quit an older running copy and drag the app from the DMG to Applications. For ZIP, extract and copy the app. Connect accounts from the app's Accounts page; you can copy the login URL into Chrome or another browser.
+If a matching artifact has been published on [Releases](https://github.com/lahuman/Codex_Monitor/releases), quit an older running copy and drag the app from the DMG to Applications. For ZIP, extract and copy the app. Connect accounts from the app's Accounts page; you can copy the login URL into Chrome or another browser.
 
 The following commands are for macOS. See the [Windows guide](docs/monitor/windows.md) for C++ Build Tools, WebView2 and NASM prerequisites.
 
 Source prerequisites: Rust 1.96.0, Node.js >=22.12 (or 20.x >=20.19), Bun 1.3.14 and Xcode Command Line Tools. A Python server and Docker are not required to run the desktop app.
 
 ```sh
-git clone https://github.com/lahuman/codex_Monitor.git
+git clone https://github.com/lahuman/Codex_Monitor.git
 cd codex_Monitor/frontend
 bun install --frozen-lockfile
 cd ../desktop

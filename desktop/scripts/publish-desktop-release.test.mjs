@@ -204,6 +204,11 @@ test("publishes only after tag, draft and seven verified assets; a same-commit r
     ),
   );
   assert.match(f.state.release.body, /notarization ticket: absent/);
+  assert.ok(
+    f.state.release.body.includes("https://lahuman.github.io/Codex_Monitor/"),
+  );
+  assert.ok(f.state.release.body.includes("docs/monitor/windows/"));
+  assert.ok(f.state.release.body.includes("docs/monitor/macos-installation/"));
   assert.equal(f.state.release.draft, false);
   f.state.mutations = [];
   await f.run();

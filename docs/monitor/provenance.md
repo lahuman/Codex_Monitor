@@ -1,6 +1,6 @@
 # 모티브·코드 출처·크레딧
 
-> 문서 계약: [monitor-documentation](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/monitor-documentation/spec.md)
+> 문서 계약: [monitor-documentation](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/monitor-documentation/spec.md)
 
 ## 출발점: codex-lb
 
@@ -17,7 +17,7 @@ Codex Monitor는 [Soju06/codex-lb](https://github.com/Soju06/codex-lb) 저장소
 | 현재 제품 범위 | 설치형 계정 모니터링 앱 |
 | 함께 남아 있는 코드 | 원본 Python 서비스와 프록시 관련 코드·문서; 기본 앱의 제공 기능과 구분 |
 
-원본 README와 기여자 고지는 [README.upstream.md](https://github.com/lahuman/codex_Monitor/blob/main/README.upstream.md)에 그대로 보존했습니다. 원본의 저작권·라이선스 고지는 [LICENSE](https://github.com/lahuman/codex_Monitor/blob/main/LICENSE)에 있습니다.
+원본 README와 기여자 고지는 [README.upstream.md](https://github.com/lahuman/Codex_Monitor/blob/main/README.upstream.md)에 그대로 보존했습니다. 원본의 저작권·라이선스 고지는 [LICENSE](https://github.com/lahuman/Codex_Monitor/blob/main/LICENSE)에 있습니다.
 
 ## 시각적 참고: 에디토리얼 디자인
 
@@ -29,7 +29,7 @@ Claude의 로고, 공식 브랜드 자산이나 라이선스가 필요한 상용
 
 [Cursor pstack](https://github.com/cursor/plugins/tree/main/pstack)의 불필요한 기능을 먼저 줄이기, 도메인 상태의 소유자 정하기, 호출부를 옮긴 뒤 기존 경로 정리하기 원칙을 참고했습니다.
 
-이 방향으로 중복 조회 스케줄을 Rust 모니터 한곳으로 모으고 UI와 메뉴 막대가 같은 관측 상태를 읽도록 정리했습니다. 참고한 원칙과 적용 내용은 [리팩토링 기록](https://github.com/lahuman/codex_Monitor/blob/main/openspec/changes/archive/2026-10-16-refactor-desktop-monitor/context.md)에 남아 있습니다. pstack 플러그인 설치나 모델 라우팅을 앱 기능으로 포함하지 않았습니다.
+이 방향으로 중복 조회 스케줄을 Rust 모니터 한곳으로 모으고 UI와 메뉴 막대가 같은 관측 상태를 읽도록 정리했습니다. 참고한 원칙과 적용 내용은 [리팩토링 기록](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/changes/archive/2026-10-16-refactor-desktop-monitor/context.md)에 남아 있습니다. pstack 플러그인 설치나 모델 라우팅을 앱 기능으로 포함하지 않았습니다.
 
 ## 조사·프로토콜 참고
 

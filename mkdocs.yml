@@ -1,8 +1,8 @@
 site_name: Codex Monitor · Documentation
 site_description: Codex Monitor desktop guides and inherited codex-lb service reference
-site_url: https://lahuman.github.io/codex_Monitor/docs/
-repo_url: https://github.com/lahuman/codex_Monitor
-repo_name: lahuman/codex_Monitor
+site_url: https://lahuman.github.io/Codex_Monitor/docs/
+repo_url: https://github.com/lahuman/Codex_Monitor
+repo_name: lahuman/Codex_Monitor
 edit_uri: edit/main/docs/
 docs_dir: docs
 

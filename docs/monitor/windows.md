@@ -1,6 +1,6 @@
 # Windows 설치와 빌드
 
-> 기능 계약: [desktop-release](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md)
+> 기능 계약: [desktop-release](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md)
 
 ## 대상과 현재 검증 범위
 
@@ -36,7 +36,7 @@ Get-FileHash .\Codex-Monitor-0.1.10-windows-x64-setup.exe -Algorithm SHA256
 PowerShell에서 저장소 루트를 기준으로 실행합니다.
 
 ```powershell
-git clone https://github.com/lahuman/codex_Monitor.git
+git clone https://github.com/lahuman/Codex_Monitor.git
 cd codex_Monitor
 rustup target add x86_64-pc-windows-msvc
 bun install --cwd frontend --frozen-lockfile
@@ -86,3 +86,5 @@ Windows는 트레이 제목 문자열을 표시하지 않으므로, macOS의 상
 빌드가 초록색이어도 공개 작업이 실패하면 Releases는 생성되지 않거나 초안으로 남을 수 있습니다. **Publish macOS and Windows prerelease** 로그를 확인하세요. 로컬 워크플로 수정은 GitHub의 `main`에 커밋·푸시한 뒤 실행되는 빌드부터 적용됩니다.
 
 기존 Windows 전용 태그·릴리스는 보존하며, 새 빌드부터 공통 `desktop-v<버전>` 릴리스를 사용합니다. 같은 버전의 macOS DMG·ZIP은 해당 릴리스의 Assets에서 함께 받을 수 있습니다.
+
+0.1.11부터 NSIS 시작·완료 화면의 사이드바와 상단에 Codex Monitor 브랜드 이미지를 적용하고, 설치 파일의 홈페이지를 `https://lahuman.github.io/Codex_Monitor/`로 지정합니다. 실제 Windows 설치 화면과 홈페이지 링크는 Windows 빌드 후 PC에서 확인해야 합니다.

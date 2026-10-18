@@ -36,9 +36,9 @@
 
 ## 설치와 시작
 
-[프로젝트 소개 페이지](https://lahuman.github.io/codex_Monitor/)는 GitHub Pages 배포 후 제공됩니다. Windows 사용자는 [설치·빌드 안내](docs/monitor/windows.md)를 참고하세요.
+[프로젝트 소개 페이지](https://lahuman.github.io/Codex_Monitor/)는 GitHub Pages 배포 후 제공됩니다. Windows 사용자는 [설치·빌드 안내](docs/monitor/windows.md)를 참고하세요.
 
-[Releases](https://github.com/lahuman/codex_Monitor/releases)에 배포 파일이 게시된 경우, 사용하는 아키텍처의 DMG 또는 ZIP을 받습니다. 현재 로컬에서 생성한 파일은 `desktop/releases/<버전>/macos-<아키텍처>/`에 있습니다.
+[Releases](https://github.com/lahuman/Codex_Monitor/releases)에 배포 파일이 게시된 경우, 사용하는 아키텍처의 DMG 또는 ZIP을 받습니다. 현재 로컬에서 생성한 파일은 `desktop/releases/<버전>/macos-<아키텍처>/`에 있습니다.
 
 1. 실행 중인 이전 앱을 종료합니다.
 2. DMG를 열고 **Codex Monitor**를 **Applications** 폴더로 드래그합니다. ZIP은 압축을 풀어 앱을 복사합니다.
@@ -52,7 +52,7 @@
 Rust 1.96.0, Node.js 22.12 이상(또는 20.19 이상인 20.x), Bun 1.3.14, Xcode Command Line Tools가 필요합니다. 앱 실행에 Python 서버나 Docker는 필요하지 않습니다.
 
 ```sh
-git clone https://github.com/lahuman/codex_Monitor.git
+git clone https://github.com/lahuman/Codex_Monitor.git
 cd codex_Monitor
 cd frontend
 bun install --frozen-lockfile

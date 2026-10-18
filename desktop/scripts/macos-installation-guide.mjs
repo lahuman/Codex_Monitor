@@ -1,3 +1,8 @@
+import {
+  projectWebsite,
+  projectReleases,
+  projectMacGuide,
+} from "./project-links.mjs";
 export const installationGuideFile = "먼저 읽어주세요.html";
 export const installerGuideResource = "installation-guide.html";
 const appleHelp = "https://support.apple.com/ko-kr/102445";
@@ -59,13 +64,17 @@ export function macInstallationGuide(config, signing) {
         s.title,
         ...s.steps.map((step, index) => `${index + 1}. ${step}`),
       ]),
+      `프로젝트 / Project: ${projectWebsite}`,
+      `배포 파일 / Releases: ${projectReleases}`,
+      `Mac 설치 안내 / Mac guide: ${projectMacGuide}`,
       `Apple 공식 안내 / Official Apple guidance: ${appleHelp}`,
     ].join("\n\n") + "\n";
   const html = `<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHTML(title)}</title>
-<style>body{font:14px/1.6 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#262626;background:#fff;max-width:760px;margin:24px auto;padding:0 20px 24px}h1{font-size:23px;line-height:1.3}h2{font-size:17px;margin:26px 0 8px}p{margin:12px 0}.notice{border-left:4px solid #a16a00;padding:12px;background:#fff7e7}li{margin:9px 0}ol{padding-left:22px}a{color:#075aaa;overflow-wrap:anywhere}.status{font-size:12px;color:#555;overflow-wrap:anywhere}</style></head><body>
-<h1>${escapeHTML(title)}</h1><p class="status">${escapeHTML(status)}</p><p class="notice">${escapeHTML(introduction)}</p>
+<style>body{font:14px/1.7 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#2f332e;background:#f7f5ef;max-width:760px;margin:24px auto;padding:0 22px 28px}h1{font-size:25px;line-height:1.35;font-weight:600;letter-spacing:-.7px;margin:8px 0 16px}h2{font-size:16px;margin:0 0 10px;font-weight:600}p{margin:12px 0}.brand{font-size:10px;font-weight:600;letter-spacing:2px;color:#a9513c}.notice{border-left:3px solid #a9513c;padding:12px 16px;background:#f2e9dd;color:#654536}.status{font-size:11px;color:#62695f;overflow-wrap:anywhere}section{border:1px solid #dcded4;border-radius:8px;background:#fffef9;margin:16px 0;padding:18px}li{margin:8px 0}ol{padding-left:21px;margin:0}a{color:#93452f;overflow-wrap:anywhere;text-underline-offset:3px}.resources{padding:14px 0;border-top:1px solid #dcded4;font-size:12px}.resources a{display:inline-block;margin:0 18px 6px 0}@media(max-width:480px){body{margin:16px auto;padding-inline:14px}h1{font-size:21px}section{padding:14px}}@media print{body{background:white}section{break-inside:avoid}}</style></head><body>
+<p class="brand">CODEX MONITOR · INSTALLATION</p><h1>${escapeHTML(title)}</h1><p class="status">${escapeHTML(status)}</p><p class="notice">${escapeHTML(introduction)}</p>
 ${sections.map((s) => `<section><h2>${escapeHTML(s.title)}</h2><ol>${s.steps.map((step) => `<li>${escapeHTML(step)}</li>`).join("")}</ol></section>`).join("\n")}
+<div class="resources"><a href="${projectWebsite}">프로젝트 / Project</a><a href="${projectReleases}">배포 파일 / Releases</a><a href="${projectMacGuide}">Mac 설치 안내 / Mac guide</a></div>
 <p><a href="${appleHelp}">Apple 공식 안내 / Official Apple guidance</a></p></body></html>\n`;
   return { html, text };
 }

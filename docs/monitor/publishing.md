@@ -1,6 +1,6 @@
 # GitHub 공개·릴리스 안내
 
-> 기준 명세: [desktop-release](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md), [monitor-documentation](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/monitor-documentation/spec.md)
+> 기준 명세: [desktop-release](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md), [monitor-documentation](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/monitor-documentation/spec.md)
 
 ## 저장소 소개 문구
 
@@ -29,12 +29,12 @@ cd desktop
 npm run package:macos
 ```
 
-현재 버전 `0.1.10`의 Apple Silicon 결과 경로 예:
+현재 버전 `0.1.11`의 Apple Silicon 결과 경로 예:
 
 ```text
-desktop/releases/0.1.10/macos-arm64/
-├── Codex-Monitor-0.1.10-macos-arm64.dmg
-├── Codex-Monitor-0.1.10-macos-arm64.zip
+desktop/releases/0.1.11/macos-arm64/
+├── Codex-Monitor-0.1.11-macos-arm64.dmg
+├── Codex-Monitor-0.1.11-macos-arm64.zip
 ├── SHA256SUMS.txt
 └── release.json
 ```
@@ -58,10 +58,10 @@ shasum -a 256 -c SHA256SUMS.txt
 현재 버전 예시:
 
 ```text
-desktop-v0.1.10 (Pre-release)
-├── Codex-Monitor-0.1.10-macos-arm64.dmg
-├── Codex-Monitor-0.1.10-macos-arm64.zip
-├── Codex-Monitor-0.1.10-windows-x64-setup.exe
+desktop-v0.1.11 (Pre-release)
+├── Codex-Monitor-0.1.11-macos-arm64.dmg
+├── Codex-Monitor-0.1.11-macos-arm64.zip
+├── Codex-Monitor-0.1.11-windows-x64-setup.exe
 ├── SHA256SUMS-macos-arm64.txt
 ├── SHA256SUMS-windows-x64.txt
 ├── release-macos-arm64.json

@@ -1,6 +1,6 @@
 # 기능과 지표
 
-> 기준 명세: [account-monitor](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/account-monitor/spec.md), [monitoring-insights](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/monitoring-insights/spec.md), [reset-credit-monitor](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/reset-credit-monitor/spec.md), [monitoring-design](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/monitoring-design/spec.md)
+> 기준 명세: [account-monitor](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/account-monitor/spec.md), [monitoring-insights](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/monitoring-insights/spec.md), [reset-credit-monitor](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/reset-credit-monitor/spec.md), [monitoring-design](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/monitoring-design/spec.md)
 
 ## 계정별 한도
 

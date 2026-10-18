@@ -10,3 +10,9 @@
 @media(max-width:1100px){.updates{gap:50px}}
 @media(max-width:800px){.updates{grid-template-columns:1fr;gap:35px}.popup-preview{width:100%}}
 @media(max-width:480px){.recent-observations{font-size:7px;gap:5px}.tray-account{min-width:32px}.tray-account strong{font-size:13px}}
+
+/* Distribution cards share the desktop installation palette. */
+.platforms{gap:16px}.platforms article{padding:22px 18px;background:#faf9f4;border:1px solid #d4d7cb;border-radius:12px;box-shadow:0 8px 24px #303d2b06;display:flex;flex-direction:column;align-items:stretch}.platforms article>p{margin:12px 0;font-size:11px}.platforms .package-format{font-size:25px;font-weight:550;color:var(--ink);letter-spacing:-.8px;margin-top:24px}.package-format span{display:block;font-size:10px;font-weight:400;color:var(--muted);letter-spacing:0}.platforms article .button{margin-top:auto;background:var(--ink);color:var(--paper);border-color:var(--ink)}.platforms article .button:hover{background:#495044}.signing-badge{display:block;font-weight:500;color:#8e4835;margin-bottom:7px}.platforms small a{display:block;margin-top:8px}.platform-footnote{line-height:1.9}
+@media(max-width:480px){.platforms article+article{padding-top:22px}.platforms article .button{max-width:none}.platforms article{padding:22px}.platforms .package-format{margin-top:18px}}
+
+@media(min-width:481px){.platforms article small{min-height:96px}}

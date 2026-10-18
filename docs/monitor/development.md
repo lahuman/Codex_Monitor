@@ -1,6 +1,6 @@
 # 개발·구조·검증
 
-> 기준 명세: [desktop-release](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md), [account-monitor](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/account-monitor/spec.md), [monitor-documentation](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/monitor-documentation/spec.md)
+> 기준 명세: [desktop-release](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md), [account-monitor](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/account-monitor/spec.md), [monitor-documentation](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/monitor-documentation/spec.md)
 
 ## 준비
 
