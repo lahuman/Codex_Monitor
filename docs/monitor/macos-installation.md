@@ -2,6 +2,10 @@
 
 > 기능 계약: [desktop-release](https://github.com/lahuman/codex_Monitor/blob/main/openspec/specs/desktop-release/spec.md)
 
+## GitHub에서 받기
+
+**Releases → desktop-v<버전> → Assets**에서 `macos-arm64.dmg` 또는 `macos-arm64.zip`을 선택합니다. 같은 릴리스에 Windows 설치 파일도 함께 표시됩니다. Mac 파일은 Apple Silicon용이며, Windows EXE와 구분하세요. Mac 체크섬은 `SHA256SUMS-macos-arm64.txt`, 배포 검증 결과는 `release-macos-arm64.json`입니다. 두 운영체제의 테스트·패키징이 모두 성공해야 통합 릴리스가 공개됩니다.
+
 ## 설치 순서
 
 1. Mac 종류에 맞는 파일을 받습니다. `macos-arm64`는 Apple Silicon(M1 이상) 전용이며 Intel Mac에는 사용할 수 없습니다. 현재 Intel 배포 파일은 제공하지 않습니다. 최소 macOS 설정은 13.3입니다.

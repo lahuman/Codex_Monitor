@@ -11,68 +11,124 @@ async function optional(call) {
   }
 }
 
-export async function windowsReleaseAssets(directory, config) {
+async function platformReleaseAssets(directory, config, platform) {
   const metadata = JSON.parse(
     await readFile(path.join(directory, "release.json"), "utf8"),
   );
   const { version, productName, identifier } = config;
-  if (
-    !/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(version) ||
-    productName !== "Codex Monitor" ||
-    identifier !== "local.codex-lb.desktop.preview"
-  )
-    throw new Error("Invalid Windows release configuration");
+  const mac = platform === "macos-arm64";
+  const names = mac
+    ? [
+        `Codex-Monitor-${version}-macos-arm64.dmg`,
+        `Codex-Monitor-${version}-macos-arm64.zip`,
+      ]
+    : [`Codex-Monitor-${version}-windows-x64-setup.exe`];
   if (
     !metadata ||
-    typeof metadata !== "object" ||
     metadata.version !== version ||
     metadata.productName !== productName ||
     metadata.identifier !== identifier ||
-    metadata.architecture !== "x64" ||
+    metadata.architecture !== (mac ? "arm64" : "x64") ||
+    !Array.isArray(metadata.artifacts) ||
+    metadata.artifacts.length !== names.length
+  )
+    throw new Error(`${platform} release manifest does not match this build`);
+  if (mac) {
+    if (
+      metadata.signing?.strictVerification !== "passed" ||
+      !["ad-hoc", "developer-id", "other"].includes(metadata.signing.kind) ||
+      !["validated", "absent", "unverified"].includes(
+        metadata.signing.notarizationTicket?.status,
+      ) ||
+      !["accepted", "rejected", "unverified"].includes(
+        metadata.signing.gatekeeper?.status,
+      ) ||
+      metadata.installer?.payloadVerification !== "passed" ||
+      metadata.installer.signing !== "unsigned" ||
+      !["app-copy", "zip-round-trip", "read-only-dmg"].every((v) =>
+        metadata.verifiedContainers?.includes(v),
+      )
+    )
+      throw new Error("macOS verification/signing facts missing");
+  } else if (
     metadata.target !== "x86_64-pc-windows-msvc" ||
-    metadata.artifacts?.length !== 1
-  )
-    throw new Error("Windows release manifest does not match this build");
-  const artifact = metadata.artifacts[0];
-  const expected = `Codex-Monitor-${version}-windows-x64-setup.exe`;
-  if (
-    artifact.file !== expected ||
-    !/^[a-f0-9]{64}$/.test(artifact.sha256) ||
-    !Number.isSafeInteger(artifact.bytes) ||
-    artifact.bytes <= 0
-  )
-    throw new Error("Invalid Windows installer metadata");
+    typeof metadata.codeSigning !== "string"
+  ) {
+    throw new Error("Windows target/signing facts missing");
+  }
   const files = (await readdir(directory)).sort();
   if (
     JSON.stringify(files) !==
-    JSON.stringify([expected, "SHA256SUMS.txt", "release.json"].sort())
+    JSON.stringify([...names, "SHA256SUMS.txt", "release.json"].sort())
   )
-    throw new Error("Unexpected Windows release artifact contents");
-  const installer = await readFile(path.join(directory, expected));
-  if (
-    installer.length !== artifact.bytes ||
-    sha256(installer) !== artifact.sha256
-  )
-    throw new Error("Windows installer checksum/size mismatch");
+    throw new Error(`Unexpected ${platform} release artifact contents`);
+  const assets = [],
+    seen = new Set();
+  for (const artifact of metadata.artifacts) {
+    if (
+      !names.includes(artifact.file) ||
+      seen.has(artifact.file) ||
+      !/^[a-f0-9]{64}$/.test(artifact.sha256) ||
+      !Number.isSafeInteger(artifact.bytes) ||
+      artifact.bytes <= 0
+    )
+      throw new Error(`Invalid ${platform} artifact metadata`);
+    seen.add(artifact.file);
+    const data = await readFile(path.join(directory, artifact.file));
+    if (data.length !== artifact.bytes || sha256(data) !== artifact.sha256)
+      throw new Error(`${platform} artifact checksum/size mismatch`);
+    assets.push({ name: artifact.file, data });
+  }
   const checksums = await readFile(path.join(directory, "SHA256SUMS.txt"));
-  if (checksums.toString("utf8") !== `${artifact.sha256}  ${expected}\n`)
-    throw new Error("Windows checksum manifest mismatch");
-  return [
-    { name: expected, data: installer },
-    { name: "SHA256SUMS-windows-x64.txt", data: checksums },
+  const expectedChecksums = metadata.artifacts
+    .map((a) => `${a.sha256}  ${a.file}\n`)
+    .join("");
+  if (checksums.toString("utf8") !== expectedChecksums)
+    throw new Error(`${platform} checksum manifest mismatch`);
+  assets.push(
+    { name: `SHA256SUMS-${platform}.txt`, data: checksums },
     {
-      name: "release-windows-x64.json",
+      name: `release-${platform}.json`,
       data: await readFile(path.join(directory, "release.json")),
     },
-  ];
+  );
+  return { assets, metadata };
+}
+export async function desktopReleaseAssets(
+  { windowsDirectory, macosDirectory },
+  config,
+) {
+  if (
+    !/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(config.version) ||
+    config.productName !== "Codex Monitor" ||
+    config.identifier !== "local.codex-lb.desktop.preview"
+  )
+    throw new Error("Invalid desktop release configuration");
+  // Validate every platform before the publisher is allowed any remote mutation.
+  const windows = await platformReleaseAssets(
+    windowsDirectory,
+    config,
+    "windows-x64",
+  );
+  const macos = await platformReleaseAssets(
+    macosDirectory,
+    config,
+    "macos-arm64",
+  );
+  return {
+    assets: [...windows.assets, ...macos.assets],
+    windowsSigning: windows.metadata.codeSigning,
+    macosSigning: macos.metadata.signing,
+  };
 }
 
 // Publication is isolated from building. No asset replacement, tag movement or deletion.
-export async function publishWindowsRelease({
+export async function publishDesktopRelease({
   github,
   context,
   core,
-  artifactDirectory,
+  windowsDirectory,
+  macosDirectory,
   configPath = new URL("../src-tauri/tauri.conf.json", import.meta.url),
 }) {
   const { owner, repo } = context.repo;
@@ -84,10 +140,13 @@ export async function publishWindowsRelease({
     !/^[a-f0-9]{40}$/.test(context.sha)
   )
     throw new Error(
-      "Only the project main push/manual build may publish Windows releases",
+      "Only the project main push/manual build may publish desktop releases",
     );
   const config = JSON.parse(await readFile(configPath, "utf8"));
-  const assets = await windowsReleaseAssets(artifactDirectory, config);
+  const { assets, windowsSigning, macosSigning } = await desktopReleaseAssets(
+    { windowsDirectory, macosDirectory },
+    config,
+  );
   const api = github.rest,
     base = { owner, repo };
   const branch = (await api.repos.getBranch({ ...base, branch: "main" })).data;
@@ -95,8 +154,11 @@ export async function publishWindowsRelease({
     throw new Error(
       "Main advanced; publish its newer successful build instead",
     );
-  const tag = `desktop-v${config.version}-windows-x64`;
-  const marker = `<!-- codex-monitor-windows-release:${context.sha} -->`;
+  const tag = `desktop-v${config.version}`;
+  const marker = `<!-- codex-monitor-desktop-release:${context.sha} -->`;
+  const downloads = `${context.serverUrl}/${owner}/${repo}/releases/download/${tag}`;
+  const downloadTable = `| Platform | Download |\n| --- | --- |\n| macOS Apple Silicon | [DMG](${downloads}/Codex-Monitor-${config.version}-macos-arm64.dmg) · [ZIP](${downloads}/Codex-Monitor-${config.version}-macos-arm64.zip) |\n| Windows x64 | [Installer](${downloads}/Codex-Monitor-${config.version}-windows-x64-setup.exe) |`;
+
   const ref = await optional(() =>
     api.git.getRef({ ...base, ref: `tags/${tag}` }),
   );
@@ -184,10 +246,10 @@ export async function publishWindowsRelease({
         ...base,
         tag_name: tag,
         target_commitish: context.sha,
-        name: `Codex Monitor ${config.version} — Windows x64`,
+        name: `Codex Monitor ${config.version} — macOS & Windows`,
         draft: true,
         prerelease: true,
-        body: `${marker}\nWindows x64 installer built from ${context.sha}.\n\nAutomated tests and packaging passed. Code signing is not configured; SmartScreen may warn. Real-PC installation and upgrade testing is still required.\n\nBuild: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+        body: `${marker}\n${downloadTable}\n\nWindows x64 and macOS Apple Silicon (arm64) builds from ${context.sha}.\n\nBoth platforms passed automated tests and native packaging checks. Real-machine installation/upgrade testing remains required.\n\nWindows code signing: ${windowsSigning}. SmartScreen may warn.\nmacOS app signing: ${macosSigning.kind}; notarization ticket: ${macosSigning.notarizationTicket.status}; Gatekeeper: ${macosSigning.gatekeeper.status}. The installer is unsigned. See the DMG installation guide before first launch.\n\nBuild: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
       })
     ).data;
   }
@@ -215,6 +277,6 @@ export async function publishWindowsRelease({
       make_latest: "false",
     })
   ).data;
-  core.info(`Published Windows prerelease: ${published.html_url}`);
+  core.info(`Published desktop prerelease: ${published.html_url}`);
   return published.html_url;
 }

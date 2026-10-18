@@ -75,17 +75,17 @@ Each macOS DMG SHALL include an offline Korean/English installation guide readab
 - **THEN** welcome and completion pages reference embedded guide resources whose content matches the DMG guide, while the app-only payload and no-install-script constraints remain enforced.
 
 
-### Requirement: Automatic Windows desktop prerelease publication
-After a successful Windows test/package job on a main-branch push or manual run in the project repository, a separate job SHALL download that same run's artifact and publish its verified x64 installer and platform-named checksum/metadata assets to GitHub Releases as a prerelease. Build and pull-request jobs SHALL retain read-only content permissions; only the eligible publication job SHALL have contents write permission. The publisher SHALL validate product, version, architecture, target, artifact filename/size/SHA-256 and checksum manifest against the checked-out configuration before any remote mutation. It SHALL require the run commit to remain the main head, bind a dedicated lightweight desktop version/architecture tag to that exact commit, and refuse another commit or an unowned existing release.
+### Requirement: Automatic desktop prerelease publication
+After successful Windows x64 and macOS arm64 test/package jobs on a main-branch push or manual run in the project repository, a separate job SHALL download both artifacts from that same run and publish them together as one desktop prerelease under a shared desktop version tag. It SHALL validate each platform's product, matching configured version, architecture, expected artifact filenames/sizes/SHA-256, exact file set and checksum manifest before remote mutation. macOS metadata SHALL preserve strict signature/container/installer verification and actual signing/notarization/Gatekeeper status. Release assets SHALL include the Windows installer, macOS DMG/ZIP and separately named platform checksum/metadata documents. Build and PR jobs SHALL retain read-only content permissions; only eligible publication SHALL receive contents write. The publisher SHALL require the run commit to remain main head, bind the shared lightweight desktop tag to that exact commit, and refuse another commit or an unowned existing release.
 
-#### Scenario: Successful main build
-- **WHEN** tests and Windows packaging succeed for the current main commit
-- **THEN** the workflow retains the Actions artifact and creates a draft release, uploads and verifies all three Windows assets, then publishes the prerelease without marking it latest.
+#### Scenario: Both platforms succeed
+- **WHEN** tests and native packaging succeed for Windows x64 and macOS arm64 on the current main commit
+- **THEN** both Actions artifacts remain available, and one draft release receives all seven verified assets before publication as a prerelease without marking it latest. Notes accurately describe each platform's signing state and Apple Silicon support.
 
-#### Scenario: Retry and conflicts
-- **WHEN** a run retries after a partial draft upload
-- **THEN** matching verified assets are reused and missing ones are completed before publication. A complete matching published release is a no-op. Conflicting tags/assets, unowned releases and incomplete already-published releases fail without replacing or deleting existing assets; a changed commit for a released version requires a version bump.
+#### Scenario: Retry and existing releases
+- **WHEN** a shared-release upload is retried on the same commit
+- **THEN** matching assets are reused, missing draft assets are completed and verified before publication, and a complete matching public release is a no-op. Conflicting tags/assets or incomplete public releases fail without replacement/deletion. Historical Windows-only tags/releases remain untouched.
 
-#### Scenario: Ineligible or failed build
-- **WHEN** a PR, non-main run or failed package/test job executes
-- **THEN** no public release publication is attempted, and a failure before all draft assets are verified leaves no newly published incomplete release.
+#### Scenario: Failed, missing or mismatched platform
+- **WHEN** either native job fails, a platform artifact is missing/corrupt, versions/architectures disagree, or a PR/non-main/fork run executes
+- **THEN** no new shared public release is published. Mac-only or Windows-only partial publication SHALL NOT occur, and modified files for an already released shared version require a desktop version bump.

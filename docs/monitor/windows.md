@@ -4,12 +4,12 @@
 
 ## 대상과 현재 검증 범위
 
-Windows 10 / 11 **x64**를 대상으로 합니다. 같은 React 대시보드와 Rust 계정 서비스를 사용하며, Windows 전용 NSIS 설치 파일과 ICO 아이콘을 구성했습니다. 현재 Mac에서 코드·공유 테스트를 확인했으며, **Windows 네이티브 CI 실행과 실제 PC의 설치·로그인·트레이 검증은 대기 중**입니다. 이 문서의 명령과 워크플로 준비가 Windows 실행 검증 완료를 뜻하지 않습니다. ARM64 Windows 네이티브 빌드는 제공하지 않습니다.
+Windows 10 / 11 **x64**를 대상으로 합니다. 같은 React 대시보드와 Rust 계정 서비스를 사용하며, Windows 전용 NSIS 설치 파일과 ICO 아이콘을 구성했습니다. Windows 네이티브 CI에서 기존 빌드가 성공한 기록을 확인했습니다. 새 통합 게시 작업의 GitHub 실행과 **실제 PC의 설치·로그인·트레이 검증은 아직 확인이 필요**합니다. 이 문서의 명령과 워크플로 준비가 Windows 실행 검증 완료를 뜻하지 않습니다. ARM64 Windows 네이티브 빌드는 제공하지 않습니다.
 
 ## GitHub에서 설치 파일 받기
 
-1. 소스를 저장소의 `main`에 올리면 `Windows desktop` 워크플로가 관련 변경에서 실행됩니다. Actions → **Windows desktop** → **Run workflow**에서 `main`을 선택해 수동 실행할 수도 있습니다.
-2. 테스트·패키징이 성공하면 **Publish Windows prerelease** 작업이 같은 실행의 설치 파일을 받아 **Releases**에 자동 등록합니다. 태그는 `desktop-v<버전>-windows-x64`이며 **Pre-release**로 표시됩니다. PR·다른 브랜치·다른 저장소의 실행은 공개하지 않습니다.
+1. 소스를 저장소의 `main`에 올리면 `Desktop release` 워크플로가 관련 변경에서 실행됩니다. Actions → **Desktop release** → **Run workflow**에서 `main`을 선택해 수동 실행할 수도 있습니다.
+2. Windows x64와 macOS Apple Silicon의 테스트·패키징이 모두 성공하면 **Publish macOS and Windows prerelease** 작업이 같은 실행의 두 운영체제 파일을 받아 **Releases**에 자동 등록합니다. 태그는 `desktop-v<버전>`이며 **Pre-release**로 표시됩니다. PR·다른 브랜치·다른 저장소의 실행은 공개하지 않습니다.
 3. Releases에서 `.exe`와 `SHA256SUMS-windows-x64.txt`를 받아 해시를 대조합니다. 메타데이터는 `release-windows-x64.json`입니다. Actions의 **Codex-Monitor-windows-x64** Artifact도 30일간 유지되며, 이 ZIP 안에서는 기존 이름 `SHA256SUMS.txt`, `release.json`을 사용합니다. Artifact 다운로드에는 GitHub 로그인이 필요할 수 있습니다.
 
 ```powershell
@@ -79,8 +79,10 @@ Windows는 트레이 제목 문자열을 표시하지 않으므로, macOS의 상
 
 빌드 작업은 읽기 권한을 유지하고, 성공한 `main` 빌드의 별도 공개 작업만 `contents: write`를 사용합니다. 별도 개인 토큰을 저장할 필요 없이 Actions의 기본 토큰을 사용합니다. 조직 정책·태그 규칙이 쓰기를 막는 경우에는 해당 정책에 맞는 권한 검토가 필요합니다.
 
-등록 전 설치 파일 이름·크기·SHA-256, 체크섬 문서, 버전·제품·x64 타깃을 확인합니다. 현재 `main` 커밋에 전용 경량 태그를 만들고 초안 릴리스에 세 파일을 올린 뒤, 업로드한 바이트까지 검증된 경우에만 Pre-release로 공개합니다. 같은 버전의 Mac 배포 자산과 이름이 충돌하지 않도록 문서 자산에 Windows 접미사를 붙입니다. Latest 정식 릴리스로 지정하지 않습니다.
+등록 전 설치 파일 이름·크기·SHA-256, 체크섬 문서, 버전·제품·x64 타깃을 확인합니다. 현재 `main` 커밋에 공통 경량 태그를 만들고 초안 릴리스에 Windows 세 파일과 macOS 네 파일을 올린 뒤, 업로드한 바이트까지 검증된 경우에만 Pre-release로 공개합니다. 같은 버전의 Mac 배포 자산과 이름이 충돌하지 않도록 문서 자산에 Windows 접미사를 붙입니다. Latest 정식 릴리스로 지정하지 않습니다.
 
 같은 커밋으로 재시도하면 부분 업로드된 초안을 이어서 완성하거나, 이미 완성된 릴리스를 검증하고 종료합니다. 태그가 다른 커밋을 가리키거나 자산 내용이 다르면 기존 파일을 교체하지 않습니다. 이때 데스크톱 버전을 올린 뒤 빌드해야 합니다. 빌드 도중 `main`이 갱신됐다면 새 커밋의 빌드를 사용합니다.
 
-빌드가 초록색이어도 공개 작업이 실패하면 Releases는 생성되지 않거나 초안으로 남을 수 있습니다. **Publish Windows prerelease** 로그를 확인하세요. 로컬 워크플로 수정은 GitHub의 `main`에 커밋·푸시한 뒤 실행되는 빌드부터 적용됩니다.
+빌드가 초록색이어도 공개 작업이 실패하면 Releases는 생성되지 않거나 초안으로 남을 수 있습니다. **Publish macOS and Windows prerelease** 로그를 확인하세요. 로컬 워크플로 수정은 GitHub의 `main`에 커밋·푸시한 뒤 실행되는 빌드부터 적용됩니다.
+
+기존 Windows 전용 태그·릴리스는 보존하며, 새 빌드부터 공통 `desktop-v<버전>` 릴리스를 사용합니다. 같은 버전의 macOS DMG·ZIP은 해당 릴리스의 Assets에서 함께 받을 수 있습니다.

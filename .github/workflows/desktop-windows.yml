@@ -1,4 +1,4 @@
-name: Windows desktop
+name: Desktop release
 
 on:
   push:
@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-desktop-${{ github.ref }}
+  group: desktop-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -80,7 +80,7 @@ jobs:
           cargo test --locked -p codex-lb-desktop --bin codex-lb-desktop
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Release publication contracts
-        run: node --test desktop/scripts/publish-windows-release.test.mjs
+        run: node --test desktop/scripts/publish-desktop-release.test.mjs
       - name: Frontend tests
         run: |
           bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx src/desktop/reset-credits.test.tsx
@@ -100,11 +100,64 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  package_macos:
+    name: Test and package macOS Apple Silicon
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Require native Apple Silicon runner
+        run: test "$(uname -m)" = arm64
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.22.0'
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.3.14'
+      - name: Install pinned Rust toolchain
+        run: rustup show active-toolchain
+      - name: Install locked dependencies
+        run: |
+          bun install --cwd frontend --frozen-lockfile
+          npm ci --prefix desktop
+      - name: Build dashboard and test native monitoring
+        run: |
+          npm --prefix desktop run build:dashboard
+          cargo test --locked -p codex-lb-server --lib
+          cargo test --locked -p codex-lb-desktop --bin codex-lb-desktop
+          node --test desktop/scripts/publish-desktop-release.test.mjs
+          bun run --cwd frontend test src/desktop
+      - name: Package and verify macOS distribution
+        run: |
+          npm --prefix desktop run package:macos
+          npm --prefix desktop run test:macos-packaging
+      - name: Resolve packaged artifact directory
+        id: packaged
+        run: |
+          node --input-type=module - <<'JS'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('desktop/src-tauri/tauri.conf.json', 'utf8'));
+          appendFileSync(process.env.GITHUB_OUTPUT, `directory=desktop/releases/${config.version}/macos-arm64\n`);
+          JS
+      - name: Upload macOS archives and checksums
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Codex-Monitor-macos-arm64
+          path: ${{ steps.packaged.outputs.directory }}
+          if-no-files-found: error
+          retention-days: 30
+
   publish:
-    name: Publish Windows prerelease
-    needs: package
+    name: Publish macOS and Windows prerelease
+    needs: [package, package_macos]
     if: github.repository == 'lahuman/Codex_Monitor' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
@@ -117,14 +170,20 @@ jobs:
         uses: actions/download-artifact@fc02353415da80201a0da48ab47022efd7725d11
         with:
           name: Codex-Monitor-windows-x64
-          path: ${{ runner.temp }}/codex-monitor-windows-release
-      - name: Publish verified installer and checksums
+          path: ${{ runner.temp }}/codex-monitor-release/windows-x64
+      - name: Download this run's macOS artifacts
+        uses: actions/download-artifact@fc02353415da80201a0da48ab47022efd7725d11
+        with:
+          name: Codex-Monitor-macos-arm64
+          path: ${{ runner.temp }}/codex-monitor-release/macos-arm64
+      - name: Publish both verified platforms
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         env:
-          ARTIFACT_DIRECTORY: ${{ runner.temp }}/codex-monitor-windows-release
+          WINDOWS_ARTIFACT_DIRECTORY: ${{ runner.temp }}/codex-monitor-release/windows-x64
+          MACOS_ARTIFACT_DIRECTORY: ${{ runner.temp }}/codex-monitor-release/macos-arm64
         with:
           script: |
             const { pathToFileURL } = await import('node:url');
-            const moduleURL = pathToFileURL(`${process.env.GITHUB_WORKSPACE}/desktop/scripts/publish-windows-release.mjs`);
-            const { publishWindowsRelease } = await import(moduleURL.href);
-            await publishWindowsRelease({ github, context, core, artifactDirectory: process.env.ARTIFACT_DIRECTORY });
+            const moduleURL = pathToFileURL(`${process.env.GITHUB_WORKSPACE}/desktop/scripts/publish-desktop-release.mjs`);
+            const { publishDesktopRelease } = await import(moduleURL.href);
+            await publishDesktopRelease({ github, context, core, windowsDirectory: process.env.WINDOWS_ARTIFACT_DIRECTORY, macosDirectory: process.env.MACOS_ARTIFACT_DIRECTORY });

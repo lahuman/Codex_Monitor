@@ -4,9 +4,9 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { publishWindowsRelease } from "./publish-windows-release.mjs";
+import { publishDesktopRelease } from "./publish-desktop-release.mjs";
 const sha = "a".repeat(40),
-  tag = "desktop-v0.1.10-windows-x64";
+  tag = "desktop-v0.1.10";
 const hash = (x) => createHash("sha256").update(x).digest("hex");
 const context = {
   repo: { owner: "lahuman", repo: "Codex_Monitor" },
@@ -17,7 +17,7 @@ const context = {
   runId: 1,
 };
 async function fixture(t) {
-  const root = await mkdtemp(path.join(tmpdir(), "windows-release-contract-"));
+  const root = await mkdtemp(path.join(tmpdir(), "desktop-release-contract-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const config = {
     productName: "Codex Monitor",
@@ -42,11 +42,44 @@ async function fixture(t) {
     ...config,
     architecture: "x64",
     target: "x86_64-pc-windows-msvc",
+    codeSigning: "not-configured",
     artifacts: [{ file, bytes: data.length, sha256: hash(data) }],
   };
   await writeFile(
     path.join(directory, "release.json"),
     JSON.stringify(metadata),
+  );
+  const macosDirectory = path.join(root, "macos");
+  await mkdir(macosDirectory);
+  const macArtifacts = [];
+  for (const extension of ["dmg", "zip"]) {
+    const file = `Codex-Monitor-0.1.10-macos-arm64.${extension}`;
+    const data = Buffer.from(
+      `macOS ${extension} publication-boundary fixture, not a native archive`,
+    );
+    await writeFile(path.join(macosDirectory, file), data);
+    macArtifacts.push({ file, bytes: data.length, sha256: hash(data) });
+  }
+  const macMetadata = {
+    ...config,
+    architecture: "arm64",
+    signing: {
+      strictVerification: "passed",
+      kind: "ad-hoc",
+      notarizationTicket: { status: "absent" },
+      gatekeeper: { status: "rejected" },
+    },
+    installer: { payloadVerification: "passed", signing: "unsigned" },
+    verifiedContainers: ["app-copy", "zip-round-trip", "read-only-dmg"],
+    artifacts: macArtifacts,
+  };
+  await writeFile(
+    path.join(macosDirectory, "release.json"),
+    JSON.stringify(macMetadata),
+  );
+  await writeFile(
+    path.join(macosDirectory, "SHA256SUMS.txt"),
+    macArtifacts.map((a) => `${a.sha256}  ${a.file}\n`).join(""),
   );
   const state = {
     mutations: [],
@@ -98,7 +131,7 @@ async function fixture(t) {
       return { data: state.assets.find((x) => x.id === p.asset_id).data };
     },
     updateRelease: async (p) => {
-      assert.equal(state.assets.length, 3);
+      assert.equal(state.assets.length, 7);
       assert.equal(p.prerelease, true);
       assert.equal(p.make_latest, "false");
       state.mutations.push("publish");
@@ -122,18 +155,28 @@ async function fixture(t) {
     paginate: async (fn, params) => (await fn(params)).data,
   };
   const run = (override = {}) =>
-    publishWindowsRelease({
+    publishDesktopRelease({
       github,
       context,
       core: { info() {} },
-      artifactDirectory: directory,
+      windowsDirectory: directory,
+      macosDirectory,
       configPath,
       ...override,
     });
-  return { root, directory, metadata, file, state, run };
+  return {
+    root,
+    directory,
+    macosDirectory,
+    metadata,
+    macMetadata,
+    file,
+    state,
+    run,
+  };
 }
 
-test("publishes only after tag, draft and three verified assets; a same-commit retry is a no-op", async (t) => {
+test("publishes only after tag, draft and seven verified assets; a same-commit retry is a no-op", async (t) => {
   const f = await fixture(t);
   await f.run();
   assert.deepEqual(f.state.mutations, [
@@ -142,27 +185,47 @@ test("publishes only after tag, draft and three verified assets; a same-commit r
     `upload:${f.file}`,
     "upload:SHA256SUMS-windows-x64.txt",
     "upload:release-windows-x64.json",
+    "upload:Codex-Monitor-0.1.10-macos-arm64.dmg",
+    "upload:Codex-Monitor-0.1.10-macos-arm64.zip",
+    "upload:SHA256SUMS-macos-arm64.txt",
+    "upload:release-macos-arm64.json",
     "publish",
   ]);
   assert.equal(f.state.release.prerelease, true);
+  assert.match(f.state.release.name, /macOS & Windows/);
+  assert.ok(
+    f.state.release.body.includes(
+      `releases/download/${tag}/Codex-Monitor-0.1.10-macos-arm64.dmg`,
+    ),
+  );
+  assert.ok(
+    f.state.release.body.includes(
+      `releases/download/${tag}/Codex-Monitor-0.1.10-windows-x64-setup.exe`,
+    ),
+  );
+  assert.match(f.state.release.body, /notarization ticket: absent/);
   assert.equal(f.state.release.draft, false);
   f.state.mutations = [];
   await f.run();
   assert.deepEqual(f.state.mutations, []);
 });
-test("partial draft retry reuses verified assets and supports missing server digests", async (t) => {
-  const f = await fixture(t);
-  f.state.omitDigest = true;
-  f.state.failUpload = 2;
-  await assert.rejects(f.run(), /upload interrupted/);
-  assert.equal(f.state.release.draft, true);
-  assert.equal(f.state.assets.length, 1);
-  f.state.failUpload = null;
-  await f.run();
-  assert.equal(f.state.assets.length, 3);
-  assert.equal(f.state.release.draft, false);
-  assert.ok(f.state.downloads >= 4);
+test("partial draft retry reuses assets before or during macOS upload, including missing digests", async (t) => {
+  for (const stop of [2, 6]) {
+    const f = await fixture(t);
+    f.state.omitDigest = true;
+    f.state.failUpload = stop;
+    await assert.rejects(f.run(), /upload interrupted/);
+    assert.equal(f.state.release.draft, true);
+    assert.equal(f.state.assets.length, stop - 1);
+    assert.ok(!f.state.mutations.includes("publish"));
+    f.state.failUpload = null;
+    await f.run();
+    assert.equal(f.state.assets.length, 7);
+    assert.equal(f.state.release.draft, false);
+    assert.ok(f.state.downloads >= 8);
+  }
 });
+
 test("refuses another tag commit, unowned releases and an advanced main without mutations", async (t) => {
   for (const kind of ["tag", "unowned", "advanced", "annotated"]) {
     const f = await fixture(t);
@@ -229,6 +292,49 @@ test("never replaces conflicting public assets or fills an incomplete published 
       f.state.assets[0].digest = null;
       f.state.assets[0].data = Buffer.from("corrupt download");
     } else f.state.assets.pop();
+    await assert.rejects(f.run());
+    assert.deepEqual(f.state.mutations, [], kind);
+  }
+});
+
+test("rejects missing, mismatched or unverified macOS artifacts before any publication", async (t) => {
+  for (const kind of [
+    "missing",
+    "version",
+    "architecture",
+    "signature",
+    "container",
+    "installer",
+    "corrupt",
+    "checksum",
+    "duplicate",
+  ]) {
+    const f = await fixture(t);
+    if (kind === "missing") await rm(f.macosDirectory, { recursive: true });
+    if (kind === "version") f.macMetadata.version = "0.0.0";
+    if (kind === "architecture") f.macMetadata.architecture = "x86_64";
+    if (kind === "signature")
+      f.macMetadata.signing.strictVerification = "failed";
+    if (kind === "container") f.macMetadata.verifiedContainers.pop();
+    if (kind === "installer")
+      f.macMetadata.installer.payloadVerification = "failed";
+    if (kind === "duplicate")
+      f.macMetadata.artifacts[1] = { ...f.macMetadata.artifacts[0] };
+    if (kind !== "missing")
+      await writeFile(
+        path.join(f.macosDirectory, "release.json"),
+        JSON.stringify(f.macMetadata),
+      );
+    if (kind === "corrupt")
+      await writeFile(
+        path.join(f.macosDirectory, f.macMetadata.artifacts[0].file),
+        "modified",
+      );
+    if (kind === "checksum")
+      await writeFile(
+        path.join(f.macosDirectory, "SHA256SUMS.txt"),
+        "incorrect",
+      );
     await assert.rejects(f.run());
     assert.deepEqual(f.state.mutations, [], kind);
   }
