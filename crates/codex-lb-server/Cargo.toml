@@ -38,3 +38,7 @@ required-features = ["legacy-relay"]
 [[test]]
 name = "workflow"
 required-features = ["legacy-relay"]
+
+# Android apps cannot use the desktop/Termux native certificate file probe.
+[target.'cfg(target_os = "android")'.dependencies]
+reqwest = { workspace = true, features = ["rustls-tls-webpki-roots"] }

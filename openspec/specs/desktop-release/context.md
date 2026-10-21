@@ -55,3 +55,8 @@ The shared platform validation owner checks exact platform archive/installer set
 The documented GitHub runner labels were checked against the official reference: https://docs.github.com/en/actions/reference/runners/github-hosted-runners. Source/workflow validation remains separate from remote GitHub execution and recipient-machine installation. No new app runtime feature or release version is introduced by this workflow change.
 
 Canonical distribution links use the exact `Codex_Monitor` case from `desktop/scripts/project-links.mjs`. Version 0.1.11 refreshes download cards, Mac offline/native Installer resources and Windows NSIS header/sidebar/homepage metadata. Old release assets remain immutable. Source SVGs accompany the committed 24-bit NSIS BMPs (150x57 header, 164x314 sidebar); raster artwork was rendered at 1x from the SVG and converted to RGB BMP with Pillow, with no added runtime/build dependency. The Pages workflow checks build_type=workflow before uploading/deploying, requiring the owner to disable branch-based publishing in Settings.
+
+
+## 0.1.21 source and release handoff
+
+The completed desktop/mobile code is committed together with current documentation. Native release jobs target the shared application library and complete UI test directory. Android previews remain separate immutable assets; the new desktop release tag binds its exact tested source commit. The Pages introduction includes Android and the cached widget. Physical-device login/installation and production signing remain distinct from CI/emulator tests.

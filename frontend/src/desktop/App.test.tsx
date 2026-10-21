@@ -12,7 +12,7 @@ import {
 import { MemoryRouter } from "react-router-dom";
 import i18n from "@/i18n";
 import { DesktopApp } from "./App";
-import { projectAccounts, type Snapshot } from "./data";
+import { type Snapshot } from "./data";
 
 let snapshot: Snapshot;
 const ipc = vi.fn();
@@ -32,7 +32,24 @@ beforeEach(async () => {
     reset_credits: {},
     usage_errors: {},
     history: {},
-    quota_windows: {},
+    quota_windows: {
+      "seat-one": [
+        {
+          period: "primary",
+          label: "5시간",
+          seconds: 18000,
+          remaining: 75,
+          reset_at: 1900000000,
+        },
+        {
+          period: "secondary",
+          label: "주간",
+          seconds: 604800,
+          remaining: 60,
+          reset_at: 1900100000,
+        },
+      ],
+    },
     alert_preferences: {},
     poll_status: {},
     account_labels: {},
@@ -63,44 +80,9 @@ beforeEach(async () => {
     ],
   };
   ipc.mockImplementation(async (command: string) => {
+    if (command === "pending_login") return null;
     if (command === "dashboard") {
       const result = structuredClone(snapshot);
-      if (!Object.keys(result.quota_windows).length) {
-        for (const a of projectAccounts(result)) {
-          result.quota_windows[a.accountId] = (
-            ["Primary", "Secondary", "Monthly"] as const
-          ).flatMap((suffix) => {
-            const minutes = a[`windowMinutes${suffix}`];
-            return minutes == null
-              ? []
-              : [
-                  {
-                    period: (
-                      {
-                        Primary: "primary",
-                        Secondary: "secondary",
-                        Monthly: "monthly",
-                      } as const
-                    )[suffix],
-                    label: {
-                      Primary: "5시간",
-                      Secondary: "주간",
-                      Monthly: "월간",
-                    }[suffix],
-                    remaining:
-                      a.usage[
-                        `${suffix.toLowerCase() as "primary" | "secondary" | "monthly"}RemainingPercent`
-                      ],
-                    seconds: minutes * 60,
-                    reset_at:
-                      a[`resetAt${suffix}`] == null
-                        ? null
-                        : Date.parse(a[`resetAt${suffix}`]!) / 1000,
-                  },
-                ];
-          });
-        }
-      }
       return result;
     }
     if (command === "start_login")
@@ -148,6 +130,7 @@ describe("embedded dashboard using real upstream components", () => {
   });
   it("preserves unknown quota", async () => {
     snapshot.accounts[0].quota = null;
+    snapshot.quota_windows = {};
     mount();
     await screen.findByText("한도 미확인");
     expect(
@@ -168,7 +151,11 @@ describe("embedded dashboard using real upstream components", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "기본 브라우저로 열기" }),
     );
-    await screen.findByText("Error: browser unavailable");
+    await waitFor(() =>
+      expect(within(dialog).getByRole("status")).toHaveTextContent(
+        "Error: browser unavailable",
+      ),
+    );
     expect(within(dialog).getByLabelText("인증 코드")).toHaveValue("TEST-CODE");
     fireEvent.click(
       within(dialog).getByRole("button", { name: "닫기 · 로그인 취소" }),
@@ -210,33 +197,28 @@ it.each([
   [604800, "secondary"],
   [2592000, "monthly"],
 ] as const)(
-  "normalizes a %s second primary-only quota at the adapter",
-  (seconds, period) => {
-    snapshot.accounts[0].quota = {
-      rate_limit: {
-        primary_window: {
-          used_percent: 37,
-          limit_window_seconds: seconds,
+  "renders canonical %s second quota in account management without reinterpreting raw quota",
+  async (seconds, period) => {
+    snapshot.quota_windows = {
+      "seat-one": [
+        {
+          period,
+          label: period === "secondary" ? "주간" : "월간",
+          seconds,
+          remaining: 63,
           reset_at: 1900000000,
         },
-      },
+      ],
     };
-    const account = projectAccounts(snapshot)[0];
-    expect(account.usage?.primaryRemainingPercent).toBeNull();
+    // Raw provider fixture still contains a conflicting 5-hour value.
+    mount("/accounts");
+    const bar = await screen.findByRole("progressbar", {
+      name: period === "secondary" ? "주간 잔여" : "월간 잔여",
+    });
+    expect(bar).toHaveAttribute("aria-valuenow", "63");
     expect(
-      account.usage?.[
-        period === "secondary"
-          ? "secondaryRemainingPercent"
-          : "monthlyRemainingPercent"
-      ],
-    ).toBe(63);
-    expect(
-      account[
-        period === "secondary"
-          ? "windowMinutesSecondary"
-          : "windowMinutesMonthly"
-      ],
-    ).toBe(seconds / 60);
+      screen.queryByRole("progressbar", { name: "5시간 잔여" }),
+    ).not.toBeInTheDocument();
   },
 );
 
@@ -245,17 +227,25 @@ it("displays each account quota without scaling and replaces it after refresh", 
     ...snapshot.accounts[0],
     id: "seat-two",
     email: "second@example.test",
-    quota: {
-      rate_limit: {
-        primary_window: { used_percent: 84, limit_window_seconds: 18000 },
-      },
-    },
   });
-  snapshot.accounts[0].quota = {
-    rate_limit: {
-      primary_window: { used_percent: 37, limit_window_seconds: 18000 },
+  snapshot.quota_windows["seat-one"] = [
+    {
+      period: "primary",
+      label: "5시간",
+      seconds: 18000,
+      remaining: 63,
+      reset_at: null,
     },
-  };
+  ];
+  snapshot.quota_windows["seat-two"] = [
+    {
+      period: "primary",
+      label: "5시간",
+      seconds: 18000,
+      remaining: 16,
+      reset_at: null,
+    },
+  ];
   mount();
   await screen.findByText("5시간 · 잔여 63%");
   expect(screen.getByText("5시간 · 잔여 16%")).toBeInTheDocument();
@@ -263,7 +253,7 @@ it("displays each account quota without scaling and replaces it after refresh", 
   const original = ipc.getMockImplementation()!;
   ipc.mockImplementation(async (command, args) => {
     if (command === "refresh_usage" && args.id === "seat-one") {
-      snapshot.accounts[0].quota!.rate_limit!.primary_window!.used_percent = 51;
+      snapshot.quota_windows["seat-one"][0].remaining = 49;
       snapshot.accounts[0].quota_observed_at = "2026-10-16T12:00:00Z";
     }
     return original(command, args);
@@ -288,6 +278,9 @@ it("shows shared monitoring failures and clears them after a successful manual r
     id: "paused-seat",
     paused: true,
   });
+  snapshot.quota_windows["paused-seat"] = structuredClone(
+    snapshot.quota_windows["seat-one"],
+  );
   mount();
   await screen.findByText(/사용량 조회 실패/);
   expect(screen.getAllByText(/오래된 사용량/)).toHaveLength(2);
@@ -496,3 +489,103 @@ it("ages voucher warnings on focus even when the local snapshot request fails", 
     clock.mockRestore();
   }
 });
+
+it("restores browser login, pauses hidden polling and completes with manual recheck after transient failure", async () => {
+  const original = ipc.getMockImplementation()!;
+  let count = 0;
+  Object.defineProperty(document, "hidden", {
+    configurable: true,
+    value: true,
+  });
+  ipc.mockImplementation(async (command: string) => {
+    if (command === "pending_login")
+      return {
+        user_code: "RESTORED-CODE",
+        verification_url: "https://auth.openai.com/codex/device",
+        interval_seconds: 60,
+        expires_at: new Date(Date.now() + 900000).toISOString(),
+      };
+    if (command === "poll_login")
+      return ++count === 1
+        ? { status: "retrying", message: "연결 확인 재시도 중" }
+        : { status: "connected" };
+    return original(command);
+  });
+  mount("/accounts");
+  const dialog = await screen.findByRole("dialog");
+  expect(within(dialog).getByLabelText("인증 코드")).toHaveValue(
+    "RESTORED-CODE",
+  );
+  expect(count).toBe(0);
+  Object.defineProperty(document, "hidden", {
+    configurable: true,
+    value: false,
+  });
+  fireEvent(document, new Event("visibilitychange"));
+  await waitFor(() =>
+    expect(within(dialog).getByRole("status")).toHaveTextContent(
+      "연결 확인 재시도 중",
+    ),
+  );
+  expect(within(dialog).getByLabelText("인증 코드")).toHaveValue(
+    "RESTORED-CODE",
+  );
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "연결 상태 다시 확인" }),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+  expect(count).toBe(2);
+  expect(ipc.mock.calls.some(([name]) => name === "start_login")).toBe(false);
+});
+it("uses mobile cards and keeps collection settings in the menu", async () => {
+  vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Android 14");
+  const original = ipc.getMockImplementation()!;
+  ipc.mockImplementation(async (name: string) =>
+    name === "mobile_settings"
+      ? {
+          minutes: 10,
+          background_minutes: 15,
+          background_state: "scheduled",
+          last_worker_at: null,
+          last_worker_result: null,
+        }
+      : original(name),
+  );
+  mount();
+  await screen.findByRole("region", { name: "모바일 계정 대시보드" });
+  expect(screen.queryByLabelText("자동 조회 간격")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("region", { name: "한도 상태 요약" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "메뉴 및 조회 설정" }));
+  const menu = await screen.findByRole("dialog");
+  await waitFor(() =>
+    expect(within(menu).getByRole("combobox")).toHaveValue("10"),
+  );
+  fireEvent.click(within(menu).getByRole("link", { name: "계정 관리" }));
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+  expect(
+    await screen.findByRole("button", { name: "계정 연결" }),
+  ).toBeVisible();
+});
+
+it.each(["stale", "future", "error", "paused"])(
+  "mutes %s quota consistently in account management",
+  async (mode) => {
+    const a = snapshot.accounts[0];
+    if (mode === "stale")
+      a.quota_observed_at = new Date(Date.now() - 300000).toISOString();
+    if (mode === "future")
+      a.quota_observed_at = new Date(Date.now() + 300000).toISOString();
+    if (mode === "error") snapshot.usage_errors[a.id] = "unavailable";
+    if (mode === "paused") a.paused = true;
+    mount("/accounts");
+    const bar = await screen.findByRole("progressbar", { name: "5시간 잔여" });
+    expect(bar).toHaveAttribute("aria-valuenow", "75");
+    expect(bar.parentElement).toHaveClass("quota-tone-neutral");
+  },
+);

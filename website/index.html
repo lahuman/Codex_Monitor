@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f5ef">
-  <meta name="description" content="Codex Monitor — 여러 Codex 계정의 잔여 한도, 초기화권과 사용 이력을 한곳에서 확인하는 Rust·Tauri 데스크톱 앱.">
+  <meta name="description" content="Codex Monitor — 여러 Codex 계정의 잔여 한도, 초기화권과 사용 이력을 한곳에서 확인하는 Rust·Tauri 데스크톱·Android 앱.">
   <meta property="og:title" content="Codex Monitor — 한도를 한눈에">
-  <meta property="og:description" content="계정은 여러 개여도, 확인은 한곳에서. 잔여 한도와 초기화권을 위한 작은 데스크톱 대시보드.">
+  <meta property="og:description" content="계정은 여러 개여도, 확인은 한곳에서. 잔여 한도와 초기화권을 위한 데스크톱·휴대폰 대시보드.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{SITE}}">
   <link rel="canonical" href="{{SITE}}">
@@ -62,16 +62,21 @@
   </div>
 </section>
 <section class="download-band" id="download" aria-labelledby="download-title"><div class="wrap download-inner">
-  <div><p class="eyebrow">A SMALL PLACE TO START</p><h2 id="download-title">당신의 데스크톱에<br>작은 관측소를.</h2><p>v{{VERSION}} · 설치형 앱 · MIT License</p><p class="download-description">계정 연결은 앱에서 진행합니다.<br>이 웹사이트는 로그인이나 계정 정보를 요청하지 않습니다.</p></div>
+  <div><p class="eyebrow">A SMALL PLACE TO START</p><h2 id="download-title">데스크톱과 휴대폰에<br>작은 관측소를.</h2><p>v{{VERSION}} · 설치형 앱 · MIT License</p><p class="download-description">계정 연결은 앱에서 진행합니다.<br>이 웹사이트는 로그인이나 계정 정보를 요청하지 않습니다.</p></div>
   <div class="platforms">
     <article><div class="platform-title"><span class="platform-icon" aria-hidden="true">⌘</span><h3>macOS</h3><span class="platform-tag">ARM64</span></div><p class="package-format">DMG <span>권장 · 설치 프로그램 포함</span></p><p>macOS 13.3 이상 · Apple Silicon<br>ZIP은 앱을 직접 복사하는 대안입니다.</p><a class="button secondary" href="{{REPO}}/releases">Mac 다운로드 <span aria-hidden="true">↗</span></a><small><b class="signing-badge">자체 서명 · Apple 미공증</b>설치 프로그램에서 진행률을 확인합니다. Intel 배포 파일은 제공하지 않습니다. <a href="docs/monitor/macos-installation/">Mac 설치·보안 경고 안내 ↗</a></small></article>
     <article><div class="platform-title"><svg class="windows-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h9v8H2zm11 0h9v8h-9zM2 13h9v8H2zm11 0h9v8h-9z"/></svg><h3>Windows</h3><span class="platform-tag">X64</span></div><p class="package-format">EXE <span>NSIS 설치 프로그램</span></p><p>Windows 10 / 11 · x64<br>안내에 따라 설치하고 알림 영역에서 확인하세요.</p><a class="button secondary" href="{{REPO}}/releases">Windows 다운로드 <span aria-hidden="true">↗</span></a><small><b class="signing-badge">미서명 · SmartScreen 경고 가능</b>설치·로그인·트레이의 실제 PC 검증은 별도입니다. WebView2가 필요할 수 있습니다. <a href="docs/monitor/windows/">Windows 설치·빌드 안내 ↗</a></small></article>
+    <article><div class="platform-title"><span class="platform-icon" aria-hidden="true">◉</span><h3>Android</h3><span class="platform-tag">ARM64</span></div><p class="package-format">APK <span>홈 위젯 포함 · 미리보기</span></p><p>Android 8.0 이상 · 휴대폰 독립 실행<br>계정 연결부터 사용량 확인까지.</p><a class="button secondary" href="{{REPO}}/releases/tag/android-v0.1.21-preview">Android 다운로드 <span aria-hidden="true">↗</span></a><small><b class="signing-badge">미리보기 서명</b>조회 끄기·간격 선택과 수동 수집을 지원합니다. 백그라운드는 Android 배터리 정책을 따릅니다. <a href="docs/monitor/android/">Android 설치·위젯 설정 ↗</a></small></article>
     <p class="platform-footnote">두 운영체제의 빌드·검증을 모두 통과하면 하나의 Pre-release에 등록합니다. macOS 앱은 자체 서명·미공증이며 Windows 설치 파일과 Mac PKG는 미서명입니다. 게시된 버전과 파일은 Releases에서 확인하세요. <a href="docs/monitor/publishing/#stable-release">정식 릴리스 전환 안내 ↗</a> · <a href="{{REPO}}/actions/workflows/desktop-windows.yml">빌드 상태 ↗</a></p>
   </div>
 </div></section>
 <section class="updates wrap section" id="updates" aria-labelledby="updates-title">
   <div class="section-intro"><p class="eyebrow">CLOSER TO YOUR WORKFLOW</p><h2 id="updates-title">작게 열고,<br>필요한 정보는 함께.</h2><p>메뉴 막대에서 계정을 누르면 해당 계정의 빠른 보기가 열립니다. 전체 대시보드를 열지 않고도 한도와 변화, 만료일을 확인하세요.</p><a class="text-link" href="docs/monitor/features/">지표와 동작 자세히 보기 ↗</a></div>
   <figure class="popup-preview"><img src="docs/monitor/assets/menubar-vouchers-compact.png" alt="가상 계정의 빠른 보기: 초기화 예정 시간, 간소화한 초기화권, 최근 1·3·6시간 변화와 24시간 차트" loading="lazy" width="760"><figcaption>가상 계정으로 검증한 macOS 빠른 보기입니다. 관측 기록이 없으면 감소량은 집계 불가로 표시합니다.</figcaption></figure>
+</section>
+<section class="updates wrap section" id="mobile" aria-labelledby="mobile-title">
+  <div class="section-intro"><p class="eyebrow">ON YOUR PHONE, AT A GLANCE</p><h2 id="mobile-title">앱을 열기 전에도,<br>계정별 여유를.</h2><p>휴대폰에서 직접 계정을 연결하고 카드 대시보드로 비교하세요. 홈 위젯은 전체 계정 또는 원하는 계정만, 막대 또는 원형으로 설정합니다.</p><p>두꺼운 그래프와 큰 잔여율, 기간별 초기화 날짜·시간을 함께 표시합니다. 큰 글씨와 위젯 크기에 맞춰 표시량을 조정하고, 저장 관측만 읽어 추가 조회를 만들지 않습니다.</p><a class="text-link" href="docs/monitor/releases/">전체 작업과 검증 범위 읽기 ↗</a></div>
+  <figure class="popup-preview"><img src="docs/monitor/assets/android-widget-responsive.png" alt="가상 계정 두 개의 Android 홈 위젯: 잔여율과 잘리지 않는 초기화 날짜·시간" loading="lazy" width="735"><figcaption>가상 데이터로 검증한 위젯입니다. 상단 오른쪽 갱신 시각은 표시 계정의 마지막 유효 관측을 나타냅니다.</figcaption></figure>
 </section>
 <section class="story wrap section" id="story" aria-labelledby="story-title">
   <div><p class="eyebrow">BUILT ON GOOD IDEAS</p><h2 id="story-title">좋은 아이디어에서,<br>우리에게 맞는 도구로.</h2></div>

@@ -2,7 +2,7 @@
 
 # Codex Monitor
 
-**A desktop dashboard for monitoring quota and banked reset vouchers across Codex accounts.**
+**A macOS, Windows and Android app for monitoring quota and banked reset vouchers across Codex accounts.**
 
 [한국어](README.md) | English
 
@@ -18,6 +18,7 @@ This project is derived from [Soju06/codex-lb](https://github.com/Soju06/codex-l
 - Configurable per-account, in-app low-quota alerts.
 - Device-code login with copyable URL/code, user-selected auth.json import, pause/resume and disconnect.
 - Light/dark themes and an app-information dialog.
+- Independent Android device login, manual/optional scheduled collection, a compact mobile dashboard, and configurable per-account or overview home-screen widgets with full reset timestamps.
 
 Quota observations are not token counts or billing totals. Unknown values remain unknown. The desktop app does not provide request relay, load balancing or a reset-voucher redemption control. [Feature semantics](docs/monitor/features.md)
 
@@ -27,10 +28,11 @@ Quota observations are not token counts or billing totals. Unknown values remain
 | --- | --- |
 | macOS Apple Silicon | App launch and DMG/ZIP packaging verified |
 | macOS Intel | Build path available; no binary produced or runtime verification in this work |
-| Windows 10 / 11 x64 | NSIS packaging and native CI configured; native CI execution and interactive PC verification pending |
+| Windows 10 / 11 x64 | Native Rust/UI tests and NSIS packaging in CI; interactive installation/login verification remains separate |
+| Android 8.0+ ARM64 | Independent account connection, dashboard and configurable home-widget APK preview |
 | Linux | No current distribution or runtime verification |
 
-Current app version: **0.1.10**. Configured minimum: **macOS 13.3**. Version 0.1.1 adds full-bundle ad-hoc signing. These artifacts are not Developer ID signed/notarized releases and may still require first-launch approval. [Mac installation diagnostics](docs/monitor/macos-installation.md)
+Current app version: **0.1.21**. Configured minimum: **macOS 13.3**. Version 0.1.1 adds full-bundle ad-hoc signing. These artifacts are not Developer ID signed/notarized releases and may still require first-launch approval. [Mac installation diagnostics](docs/monitor/macos-installation.md)
 
 ## Install or build
 
@@ -42,7 +44,7 @@ Source prerequisites: Rust 1.96.0, Node.js >=22.12 (or 20.x >=20.19), Bun 1.3.14
 
 ```sh
 git clone https://github.com/lahuman/Codex_Monitor.git
-cd codex_Monitor/frontend
+cd Codex_Monitor/frontend
 bun install --frozen-lockfile
 cd ../desktop
 npm ci
@@ -64,6 +66,6 @@ The repository retains upstream Python/service code and documentation; the defau
 
 Source basis and dashboard inspiration: **codex-lb**. Visual direction: a user-supplied **Claude.com editorial design reference**. Refactoring principles: **Cursor pstack**. These roles are documented separately in [Provenance](docs/monitor/provenance.md). This is an independent project, with no implied endorsement by OpenAI, Anthropic or Cursor.
 
-[MIT License](LICENSE); the original `Copyright (c) 2025 Soju06` notice is retained. [Documentation index](docs/monitor/index.md)
+[MIT License](LICENSE); the original `Copyright (c) 2025 Soju06` notice is retained. [Documentation index](docs/monitor/index.md) · [0.1.21 work and verification](docs/monitor/releases.md) · [Android guide](docs/monitor/android.md)
 
 Windows: [installation and native build](docs/monitor/windows.md). Project website: [GitHub Pages deployment](docs/monitor/website.md). The website becomes public after the Pages workflow is run in your repository.

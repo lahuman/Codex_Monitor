@@ -23,6 +23,21 @@ export function observedSeconds(account: Snapshot["accounts"][number]) {
     ? Math.floor(Date.parse(account.quota_observed_at) / 1000)
     : null;
 }
+// Quota color and state must use the same freshness boundary on every surface.
+export function isCurrentObservation(
+  data: Snapshot,
+  account: Snapshot["accounts"][number],
+  now: number,
+) {
+  const at = observedSeconds(account);
+  return (
+    !account.paused &&
+    !data.usage_errors[account.id] &&
+    at != null &&
+    at <= now &&
+    now - at <= 120
+  );
+}
 export function values(data: Snapshot, id: string) {
   return (data.quota_windows[id] ?? []).flatMap((w) =>
     w.remaining == null ? [] : [w.remaining],
@@ -33,10 +48,10 @@ export function health(
   account: Snapshot["accounts"][number],
   now: number,
 ) {
-  const at = observedSeconds(account),
-    known = values(data, account.id);
+  const known = values(data, account.id);
   if (account.paused) return "정지";
-  if (at == null || now - at > 120 || !known.length) return "미확인";
+  if (!isCurrentObservation(data, account, now) || !known.length)
+    return "미확인";
   const min = Math.min(...known);
   return min <= 0 ? "소진" : min <= 20 ? "부족" : "정상";
 }
@@ -129,4 +144,16 @@ export function accountSamples(
   return latest && latest.at >= (saved.at(-1)?.at ?? 0)
     ? [...saved.filter((sample) => sample.at < latest.at), latest]
     : saved;
+}
+
+export function quotaTone(value: number | null, muted = false) {
+  return value == null || muted
+    ? "neutral"
+    : value >= 50
+      ? "green"
+      : value >= 25
+        ? "yellow"
+        : value >= 10
+          ? "orange"
+          : "red";
 }

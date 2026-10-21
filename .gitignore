@@ -24,7 +24,8 @@ dist/
 site/
 /target/
 crates/**/target/
-desktop/src-tauri/gen/
+desktop/src-tauri/gen/*
+!desktop/src-tauri/gen/android/
 app/static/
 deploy/helm/*/charts/
 
@@ -76,3 +77,13 @@ DECISIONS.md
 /desktop/dashboard-dist/
 
 /desktop/releases/
+
+# Android generated build outputs (native project sources remain tracked)
+/desktop/src-tauri/gen/android/app/src/main/jniLibs/
+/desktop/src-tauri/gen/android/app/src/main/java/local/codex_lb/desktop/preview/generated/
+/desktop/src-tauri/gen/android/app/tauri.build.gradle.kts
+/desktop/src-tauri/gen/android/app/tauri.properties
+
+# Tauri-generated Android asset configuration
+/desktop/src-tauri/gen/android/app/src/main/assets/tauri.conf.json
+/desktop/src-tauri/gen/android/app/src/main/assets/LICENSE.txt

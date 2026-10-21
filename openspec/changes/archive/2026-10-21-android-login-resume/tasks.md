@@ -1,0 +1,3 @@
+- [x] Add encrypted, resumable device-login phases and transient retry behavior.
+- [x] Restore pending UI login, check on foreground return and provide a manual check.
+- [x] Verify restart and network-failure paths, build an update APK and document constraints.

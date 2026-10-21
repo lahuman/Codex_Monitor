@@ -431,7 +431,7 @@ async fn device_authorization_obeys_poll_interval_and_connects() {
     assert!(f.service.poll_login().await.is_err());
     assert!(f.service.pending_login().await.is_err());
     f.service.start_login().await.unwrap();
-    f.service.cancel_login().await;
+    f.service.cancel_login().await.unwrap();
     assert!(f.service.pending_login().await.is_err());
 }
 #[tokio::test]

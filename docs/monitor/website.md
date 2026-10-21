@@ -2,7 +2,7 @@
 
 > 기능 계약: [project-site](https://github.com/lahuman/Codex_Monitor/blob/main/openspec/specs/project-site/spec.md)
 
-소개 페이지는 `website/`에 있는 정적 HTML·CSS·JavaScript로 구성됩니다. 크림색·코랄 포인트와 앱 아이콘을 공유하고, 기능 소개, 기간 전환이 가능한 예시 대시보드, OS별 Releases 다운로드·설치 안내와 출처를 제공합니다. 계정별 두 줄 메뉴 막대, 잔여율 색상, 최근 1·3·6시간 감소량과 24시간 차트, 초기화권의 간소화된 표시와 만료 경고를 소개합니다. 빠른 보기 이미지는 가상 계정의 검증 화면입니다. 로그인·실제 계정 조회·분석 추적 스크립트는 없으며 예시 수치는 실제 사용자의 데이터가 아닙니다.
+소개 페이지는 Android 독립 조회·홈 위젯과 데스크톱 모니터링을 함께 소개합니다. `website/`에 있는 정적 HTML·CSS·JavaScript로 구성됩니다. 크림색·코랄 포인트와 앱 아이콘을 공유하고, 기능 소개, 기간 전환이 가능한 예시 대시보드, OS별 Releases 다운로드·설치 안내와 출처를 제공합니다. 계정별 두 줄 메뉴 막대, 잔여율 색상, 최근 1·3·6시간 감소량과 24시간 차트, 초기화권의 간소화된 표시와 만료 경고를 소개합니다. 빠른 보기 이미지는 가상 계정의 검증 화면입니다. 로그인·실제 계정 조회·분석 추적 스크립트는 없으며 예시 수치는 실제 사용자의 데이터가 아닙니다.
 
 ## 로컬 미리보기
 
@@ -48,7 +48,7 @@ node scripts/desktop/build-website.mjs
 | 버전·정규 아이콘 | `desktop/src-tauri/tauri.conf.json`, `desktop/branding/icon.svg` |
 | 생성·배포 | `scripts/desktop/build-website.mjs`, `.github/workflows/docs.yml` |
 
-두 플랫폼의 다운로드는 공통 Releases 목록으로 연결합니다. 통합 빌드·공개 성공 전에는 특정 파일이 이미 게시되었다고 표시하지 않습니다. macOS 자체 서명·미공증 및 Windows 미서명 상태와 실제 PC 검증 범위를 구분합니다. [Mac 설치 가이드](macos-installation.md), [Windows 안내](windows.md), [정식 릴리스 전환](publishing.md#stable-release)을 함께 제공합니다.
+macOS·Windows 다운로드는 공통 Releases 목록으로 연결하고 Android는 기존 APK 미리보기와 설치 가이드로 연결합니다. 통합 빌드·공개 성공 전에는 특정 파일이 이미 게시되었다고 표시하지 않습니다. macOS 자체 서명·미공증 및 Windows 미서명 상태와 실제 PC 검증 범위를 구분합니다. [Mac 설치 가이드](macos-installation.md), [Windows 안내](windows.md), [정식 릴리스 전환](publishing.md#stable-release)을 함께 제공합니다.
 
 문서를 포함한 페이지 변경사항을 `main`에 푸시하면 기존 Pages 워크플로가 다시 배포합니다. 로컬 빌드 완료와 실제 공개 페이지 갱신은 별개입니다.
 

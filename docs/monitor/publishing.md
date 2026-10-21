@@ -6,11 +6,11 @@
 
 GitHub의 About 설명에 사용할 수 있는 문구입니다.
 
-> Codex 계정별 잔여 한도와 초기화권 만료일을 확인하는 Rust·Tauri 기반 데스크톱 모니터링 앱. codex-lb에서 출발한 파생 프로젝트.
+> Codex 계정별 잔여 한도와 초기화권 만료일을 확인하는 Rust·Tauri 기반 macOS·Windows·Android 모니터링 앱. codex-lb에서 출발한 파생 프로젝트.
 
 영문:
 
-> A Rust/Tauri desktop dashboard for Codex account quotas and reset-voucher expiry dates, derived from codex-lb.
+> A Rust/Tauri desktop and Android dashboard for Codex account quotas and reset-voucher expiry dates, derived from codex-lb.
 
 주제 태그 후보: `codex`, `tauri`, `rust`, `macos`, `windows`, `desktop`, `usage-monitor`, `dashboard`.
 
@@ -29,12 +29,12 @@ cd desktop
 npm run package:macos
 ```
 
-현재 버전 `0.1.11`의 Apple Silicon 결과 경로 예:
+현재 버전 `0.1.21`의 Apple Silicon 결과 경로 예:
 
 ```text
-desktop/releases/0.1.11/macos-arm64/
-├── Codex-Monitor-0.1.11-macos-arm64.dmg
-├── Codex-Monitor-0.1.11-macos-arm64.zip
+desktop/releases/0.1.21/macos-arm64/
+├── Codex-Monitor-0.1.21-macos-arm64.dmg
+├── Codex-Monitor-0.1.21-macos-arm64.zip
 ├── SHA256SUMS.txt
 └── release.json
 ```
@@ -58,10 +58,10 @@ shasum -a 256 -c SHA256SUMS.txt
 현재 버전 예시:
 
 ```text
-desktop-v0.1.11 (Pre-release)
-├── Codex-Monitor-0.1.11-macos-arm64.dmg
-├── Codex-Monitor-0.1.11-macos-arm64.zip
-├── Codex-Monitor-0.1.11-windows-x64-setup.exe
+desktop-v0.1.21 (Pre-release)
+├── Codex-Monitor-0.1.21-macos-arm64.dmg
+├── Codex-Monitor-0.1.21-macos-arm64.zip
+├── Codex-Monitor-0.1.21-windows-x64-setup.exe
 ├── SHA256SUMS-macos-arm64.txt
 ├── SHA256SUMS-windows-x64.txt
 ├── release-macos-arm64.json
@@ -74,7 +74,7 @@ Mac 빌드는 `macos-15`의 arm64 실행 환경을 확인한 뒤 진행합니다
 
 릴리스 본문에는 두 플랫폼의 서명 상태와 macOS 공증·Gatekeeper 결과를 표시합니다. 현재 자체 서명·미공증 Mac 앱에는 보안 경고가 표시될 수 있고 Windows 서명도 구성되지 않았습니다. 실제 PC의 설치·제거·업데이트·로그인을 검증한 뒤 정식 배포 여부를 판단하세요. Mac 사용자는 DMG의 **먼저 읽어주세요.html**에서 설치 가이드를 확인합니다.
 
-생성한 소스·워크플로는 저장소 소유자가 커밋·푸시한 뒤 실제 GitHub 실행으로 확인합니다. 로컬 테스트와 명세 검증만으로 원격 릴리스 업로드 성공을 주장하지 않습니다.
+소스·워크플로를 커밋·푸시한 뒤 실제 GitHub 실행으로 확인합니다. 로컬 테스트와 명세 검증만으로 원격 릴리스 업로드 성공을 주장하지 않습니다.
 
 [개발 안내](development.md) · [문서 목록](index.md)
 
@@ -84,7 +84,7 @@ Mac 빌드는 `macos-15`의 arm64 실행 환경을 확인한 뒤 진행합니다
 - [Windows 네이티브 빌드·설치 파일](windows.md): `Desktop release`가 두 운영체제 파일을 공통 Releases에 등록하고 플랫폼별 Artifact도 보존합니다.
 - [GitHub Pages](website.md): `Project website and docs` 워크플로가 소개 페이지와 참조 문서를 하나의 Pages artifact로 배포합니다. 저장소 Settings → Pages → Source는 **GitHub Actions**로 선택합니다.
 - 원본 Python 제품의 CI·릴리스·라벨 관리 워크플로는 `github.repository == 'Soju06/codex-lb'` 조건으로 원본 저장소에서만 실행되도록 보존합니다. 이 포크의 배포 워크플로는 통합 데스크톱 빌드·릴리스와 소개 페이지·문서 배포입니다.
-- 업로드 전 검토한 소스와 아이콘만 커밋하고 `.local/`, `target/`, `desktop/releases/`, 앱 데이터 디렉터리는 포함하지 않습니다. GitHub 업로드와 실제 Pages 설정은 저장소 소유자가 진행합니다.
+- 업로드 전 검토한 소스와 아이콘만 커밋하고 `.local/`, `target/`, `desktop/releases/`, 앱 데이터 디렉터리는 포함하지 않습니다. GitHub 업로드는 명시적으로 승인된 작업에서 진행하고, Pages 설정은 저장소의 GitHub Actions 소스를 사용합니다.
 
 Mac 설치 실패 시 [서명·호환성 진단 안내](macos-installation.md)를 사용하세요. DMG에는 읽기 전용 진단 스크립트도 포함됩니다.
 
@@ -98,3 +98,10 @@ Mac 설치 실패 시 [서명·호환성 진단 안내](macos-installation.md)�
 태그와 기존 DMG·ZIP·EXE를 그대로 유지하므로 다시 빌드하거나 업로드할 필요가 없습니다. 새 버전은 자동화가 Pre-release로 생성합니다. 같은 커밋으로 재실행할 때 이미 공개된 파일이 모두 일치하면 정식 릴리스 상태를 되돌리지 않습니다. 코드가 달라졌다면 버전을 올려 새 릴리스로 배포합니다.
 
 참고: [GitHub 릴리스 관리](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
+
+
+## 0.1.21 소스와 Android 미리보기
+
+이번 소스 반영에는 Android 독립 계정 연결, 인증 복원, 배터리를 고려한 수집, 모바일 카드 대시보드와 반응형 홈 위젯, 데스크톱 가독성 통일 및 기능 명세·예시 화면이 포함됩니다. 네이티브 Android 프로젝트와 Gradle wrapper는 빌드 소스이며, 개인 SDK 경로·서명 키·계정 데이터·중간 APK는 커밋하지 않습니다. [전체 작업·검증 정리](releases.md)를 참고하세요.
+
+기존 `android-v0.1.21-preview`는 이미 공개된 APK 미리보기입니다. 과거 태그는 당시 기준 커밋을 가리키므로 자동 생성 Source code ZIP이 해당 APK 전체 소스와 같다고 해석하지 않습니다. 이번 소스 커밋과 새 `desktop-v0.1.21`은 일치하며, 새 데스크톱 릴리즈는 커밋된 소스로 Windows·macOS를 각각 재빌드합니다. 기존 Android APK·태그는 교체하지 않습니다. Android APK는 [Android 미리보기 릴리즈](https://github.com/lahuman/Codex_Monitor/releases/tag/android-v0.1.21-preview)에서 받습니다.

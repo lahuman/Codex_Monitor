@@ -127,53 +127,17 @@ export async function invoke(
   if (!api) throw new Error(`${productName} 앱에서 실행해 주세요.`);
   return api.core.invoke(command, args);
 }
-function remaining(value: number | null | undefined) {
-  return value == null ? null : Math.max(0, Math.min(100, 100 - value));
-}
-function reset(value: number | null | undefined) {
-  if (value == null) return null;
-  const d = new Date(value * 1000);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
 export function projectAccounts(data: Snapshot) {
-  return data.accounts.map((a) => {
-    let p = a.quota?.rate_limit?.primary_window;
-    let s = a.quota?.rate_limit?.secondary_window;
-    let m: typeof p = null;
-    // The provider may return a weekly/monthly-only limit in the primary slot.
-    if (!s && p?.limit_window_seconds === 604800) {
-      s = p;
-      p = null;
-    } else if (!s && p?.limit_window_seconds === 2592000) {
-      m = p;
-      p = null;
-    }
-    return {
-      accountId: a.id,
-      email: a.email ?? "",
-      displayName: data.account_labels[a.id]?.full || a.email || a.account_id,
-      planType: a.plan ?? "unknown",
-      status: a.paused ? "paused" : "active",
-      usage: {
-        primaryRemainingPercent: remaining(p?.used_percent),
-        secondaryRemainingPercent: remaining(s?.used_percent),
-        monthlyRemainingPercent: remaining(m?.used_percent),
-      },
-      resetAtMonthly: reset(m?.reset_at),
-      windowMinutesMonthly:
-        m?.limit_window_seconds == null ? null : m.limit_window_seconds / 60,
-      resetAtPrimary: reset(p?.reset_at),
-      resetAtSecondary: reset(s?.reset_at),
-      windowMinutesPrimary:
-        p?.limit_window_seconds == null ? null : p.limit_window_seconds / 60,
-      windowMinutesSecondary:
-        s?.limit_window_seconds == null ? null : s.limit_window_seconds / 60,
-    };
-  });
+  return data.accounts.map((a) => ({
+    accountId: a.id,
+    email: a.email ?? "",
+    displayName: data.account_labels[a.id]?.full || a.email || a.account_id,
+    planType: a.plan ?? "플랜 미확인",
+  }));
 }
-export type AccountView = ReturnType<typeof projectAccounts>[number];
 export const LoginStatusSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("pending") }),
+  z.object({ status: z.literal("retrying"), message: z.string() }),
   z.object({ status: z.literal("connected") }),
 ]);
 

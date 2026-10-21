@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">"Codex Monitor"</string>
+    <string name="main_activity_title">"Codex Monitor"</string>
+<string name="widget_description">계정별 원형·막대 그래프와 전체 계정 비교 · 저장된 잔여 한도</string>
+</resources>

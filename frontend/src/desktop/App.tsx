@@ -1,6 +1,13 @@
+import { QuotaWindow } from "./quota-window";
+import { isCurrentObservation } from "./insights-model";
+import { MonitorDialogContent as DialogContent } from "./monitor-dialog";
+import "./mobile.css";
+import { MobileDashboard } from "./mobile-dashboard";
+import { MobileNavigation } from "./mobile-navigation";
+import { isAndroid } from "./platform";
 import { NicknameEditor } from "./nickname-editor";
 import { MonitoringInsights, MonitoringSummary } from "./insights";
-import { QuotaChart, CopyField } from "./components";
+import { CopyField } from "./components";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import {
@@ -18,7 +25,6 @@ import { productName, productVersion, minimumMacOS } from "./branding";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -44,6 +50,8 @@ export function DesktopApp() {
     [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now() / 1000);
+  const checkLogin = useRef<() => Promise<void>>(async () => {});
+  const loginGeneration = useRef(0);
   const [device, setDevice] = useState<Device | null>(null),
     [loginOpen, setLoginOpen] = useState(false),
     [deleteId, setDeleteId] = useState<string | null>(null);
@@ -73,14 +81,21 @@ export function DesktopApp() {
       setNow(Date.now() / 1000);
       void reload().catch((e) => setError(String(e)));
     };
-    load();
-    const timer = setInterval(() => {
-      if (!document.hidden) load();
-    }, 5000);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const visibility = () => {
+      clearInterval(timer);
+      if (!document.hidden) {
+        load();
+        timer = setInterval(load, isAndroid() ? 15000 : 5000);
+      }
+    };
+    visibility();
     window.addEventListener("focus", load);
+    document.addEventListener("visibilitychange", visibility);
     return () => {
       clearInterval(timer);
       window.removeEventListener("focus", load);
+      document.removeEventListener("visibilitychange", visibility);
     };
   }, [reload]);
   useEffect(() => {
@@ -114,46 +129,88 @@ export function DesktopApp() {
     }
   }
   useEffect(() => {
+    let active = true;
+    const generation = loginGeneration.current;
+    void invoke("pending_login")
+      .then((value) => {
+        if (
+          active &&
+          generation === loginGeneration.current &&
+          value !== null
+        ) {
+          setDevice(DeviceSchema.parse(value));
+          setLoginOpen(true);
+        }
+      })
+      .catch((e) => {
+        if (active) setError(String(e));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
     if (!device) return;
     let active = true,
       polling = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
-      if (polling) return;
+      if (polling || !active || document.hidden) return;
+      if (Date.now() >= Date.parse(device.expires_at)) {
+        setError("로그인 코드가 만료되었습니다. 다시 연결해 주세요.");
+        setDevice(null);
+        return;
+      }
       polling = true;
+      clearTimeout(timer);
       try {
         const result = LoginStatusSchema.parse(await invoke("poll_login"));
         if (active && result.status === "connected") {
           setDevice(null);
           setLoginOpen(false);
+          setError("");
           setNotice("계정이 연결되었습니다. 사용량 조회로 한도를 확인하세요.");
           await reload();
+        } else if (active && result.status === "retrying") {
+          setError(result.message);
+        } else if (active) {
+          setError("");
         }
       } catch (e) {
-        if (active) {
-          setError(String(e));
-          setDevice(null);
-        }
+        // A temporary network/IPC error must not discard an approved login.
+        if (active) setError(String(e));
       } finally {
         polling = false;
+        if (active && !document.hidden)
+          timer = setTimeout(() => void poll(), device.interval_seconds * 1000);
       }
     };
-    const timer = setInterval(
-      () => void poll(),
-      device.interval_seconds * 1000,
-    );
+    checkLogin.current = poll;
+    const visibility = () => {
+      clearTimeout(timer);
+      if (!document.hidden) void poll();
+    };
+    visibility();
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("focus", visibility);
     return () => {
       active = false;
-      clearInterval(timer);
+      clearTimeout(timer);
+      checkLogin.current = async () => {};
+      document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("focus", visibility);
     };
   }, [device, reload]);
   const accounts = useMemo(() => (data ? projectAccounts(data) : []), [data]);
   async function beginLogin() {
+    loginGeneration.current++;
     await perform(async () => {
       setDevice(DeviceSchema.parse(await invoke("start_login")));
       setLoginOpen(true);
     });
   }
   async function cancelLogin() {
+    loginGeneration.current++;
     await perform(async () => {
       await invoke("cancel_login");
       setDevice(null);
@@ -186,68 +243,86 @@ export function DesktopApp() {
   }
 
   return (
-    <div className="desktop-shell min-h-screen bg-background text-foreground">
-      <header className="desktop-header sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-4 px-6 py-4">
-          <Link
-            to="/"
-            className="flex flex-1 items-center gap-2 text-sm font-semibold"
-          >
-            <img src={appIcon} alt="" className="size-10" />
-            {productName}
-          </Link>
-          <nav className="flex items-center rounded-lg bg-muted p-1">
-            {[
-              ["/", "대시보드"],
-              ["/accounts", "계정"],
-            ].map(([to, label]) => (
-              <NavLink
-                key={to}
-                to={to}
-                end
-                className={({ isActive }) =>
-                  `rounded-md px-4 py-1.5 text-xs font-medium ${isActive ? "bg-background shadow-sm" : "text-muted-foreground"}`
-                }
+    <div
+      className={`desktop-shell min-h-screen bg-background text-foreground ${isAndroid() ? "android-shell" : ""}`}
+    >
+      {isAndroid() ? (
+        <MobileNavigation
+          blurred={blurred}
+          dark={theme === "dark"}
+          onPrivacy={togglePrivacy}
+          onTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onAbout={() => setAboutOpen(true)}
+        />
+      ) : (
+        <header className="desktop-header sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
+          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-4 px-6 py-4">
+            <Link
+              to="/"
+              className="flex flex-1 items-center gap-2 text-sm font-semibold"
+            >
+              <img src={appIcon} alt="" className="size-10" />
+              {productName}
+            </Link>
+            <nav className="flex items-center rounded-lg bg-muted p-1">
+              {[
+                ["/", "대시보드"],
+                ["/accounts", "계정"],
+              ].map(([to, label]) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end
+                  className={({ isActive }) =>
+                    `rounded-md px-4 py-1.5 text-xs font-medium ${isActive ? "bg-background shadow-sm" : "text-muted-foreground"}`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+            <div className="flex flex-1 justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="앱 정보"
+                onClick={() => setAboutOpen(true)}
               >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="flex flex-1 justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="앱 정보"
-              onClick={() => setAboutOpen(true)}
-            >
-              <Info />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="이메일 가리기"
-              onClick={togglePrivacy}
-            >
-              {blurred ? <EyeOff /> : <Eye />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="테마 전환"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              {theme === "dark" ? <Sun /> : <Moon />}
-            </Button>
+                <Info />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="이메일 가리기"
+                onClick={togglePrivacy}
+              >
+                {blurred ? <EyeOff /> : <Eye />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="테마 전환"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                {theme === "dark" ? <Sun /> : <Moon />}
+              </Button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
       <main className="desktop-main mx-auto max-w-[1200px] space-y-6 px-6 py-8 pb-20">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="page-heading flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="desktop-title">
-              {page === "dashboard" ? "대시보드" : "계정"}
+              {page === "dashboard"
+                ? isAndroid()
+                  ? "내 계정"
+                  : "대시보드"
+                : "계정"}
             </h1>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p
+              className={`mt-1 text-xs text-muted-foreground ${isAndroid() ? "hidden" : ""}`}
+            >
               {page === "dashboard"
                 ? "계정별 잔여 한도와 초기화 시간을 확인하세요."
                 : "계정 연결과 사용량을 앱 안에서 관리합니다."}
@@ -261,7 +336,7 @@ export function DesktopApp() {
               onClick={() => void refreshQuota()}
             >
               <RefreshCw className={busy ? "animate-spin" : ""} />
-              사용량 새로고침
+              {isAndroid() ? "지금 수집하기" : "사용량 새로고침"}
             </Button>
             {page === "accounts" && (
               <Button
@@ -297,14 +372,14 @@ export function DesktopApp() {
           </div>
         ) : (
           <>
-            {page === "dashboard" && (
-              <>
-                <MonitoringSummary data={data} now={now} blurred={blurred} />
-                <MonitoringInsights
+            {page === "dashboard" &&
+              (isAndroid() ? (
+                <MobileDashboard
                   data={data}
                   now={now}
                   blurred={blurred}
                   busy={busy}
+                  onRefresh={(id) => void refreshQuota(id)}
                   onConfigure={(id, enabled, threshold) =>
                     void perform(async () => {
                       await invoke("configure_alert", {
@@ -316,8 +391,27 @@ export function DesktopApp() {
                     })
                   }
                 />
-              </>
-            )}
+              ) : (
+                <>
+                  <MonitoringSummary data={data} now={now} blurred={blurred} />
+                  <MonitoringInsights
+                    data={data}
+                    now={now}
+                    blurred={blurred}
+                    busy={busy}
+                    onConfigure={(id, enabled, threshold) =>
+                      void perform(async () => {
+                        await invoke("configure_alert", {
+                          id,
+                          enabled,
+                          threshold,
+                        });
+                        setNotice("알림 설정을 저장했습니다.");
+                      })
+                    }
+                  />
+                </>
+              ))}
             {page === "accounts" && (
               <>
                 <div className="flex gap-2">
@@ -363,7 +457,7 @@ export function DesktopApp() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="managed-accounts grid gap-4 lg:grid-cols-2">
                     {accounts.map((a) => {
                       const source = data.accounts.find(
                         (s) => s.id === a.accountId,
@@ -371,12 +465,12 @@ export function DesktopApp() {
                       return (
                         <article
                           key={a.accountId}
-                          className={`space-y-4 rounded-xl border bg-card p-5 ${new URLSearchParams(location.search).get("selected") === a.accountId ? "ring-2 ring-primary/30" : ""}`}
+                          className={`managed-account space-y-4 rounded-xl border bg-card p-5 ${new URLSearchParams(location.search).get("selected") === a.accountId ? "ring-2 ring-primary/30" : ""}`}
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="managed-account-heading">
                             <div>
                               <h2
-                                className={`text-sm font-semibold ${blurred && a.email ? "blur-sm" : ""}`}
+                                className={`text-sm font-semibold ${blurred ? "blur-sm" : ""}`}
                               >
                                 {a.displayName}
                               </h2>
@@ -411,32 +505,46 @@ export function DesktopApp() {
                               })
                             }
                           />
-                          <div className="space-y-3">
-                            {(["primary", "secondary", "monthly"] as const)
-                              .filter((period) =>
-                                period === "primary"
-                                  ? a.windowMinutesPrimary != null
-                                  : period === "secondary"
-                                    ? a.windowMinutesSecondary != null
-                                    : a.windowMinutesMonthly != null,
-                              )
-                              .map((period) => (
-                                <QuotaChart
-                                  key={period}
-                                  accounts={[a]}
-                                  period={period}
+                          <div className="managed-quota-grid">
+                            {(data.quota_windows[a.accountId] ?? []).map(
+                              (window) => (
+                                <QuotaWindow
+                                  key={window.period}
+                                  window={window}
+                                  now={now}
+                                  muted={
+                                    !isCurrentObservation(data, source, now)
+                                  }
                                 />
-                              ))}
+                              ),
+                            )}
+                            {!data.quota_windows[a.accountId]?.length && (
+                              <p className="text-sm text-muted-foreground">
+                                한도 미확인 · 사용량 조회 후 표시됩니다.
+                              </p>
+                            )}
                           </div>
+                          {data.usage_errors[a.accountId] && (
+                            <p
+                              role="alert"
+                              className="text-sm text-destructive"
+                            >
+                              조회 실패 · 마지막 관측값을 표시합니다.
+                            </p>
+                          )}
                           <p className="text-xs text-muted-foreground">
-                            최근 조회:{" "}
+                            {!source.paused &&
+                            source.quota_observed_at &&
+                            !isCurrentObservation(data, source, now)
+                              ? "이전 관측 · "
+                              : "최근 조회: "}
                             {source.quota_observed_at
                               ? new Date(
                                   source.quota_observed_at,
                                 ).toLocaleString("ko-KR")
                               : "조회 전"}
                           </p>
-                          <div className="flex gap-2">
+                          <div className="managed-account-actions flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -474,9 +582,16 @@ export function DesktopApp() {
       </main>
       <footer className="desktop-footer fixed bottom-0 z-10 flex w-full items-center justify-between border-t bg-background px-6 py-2 text-[11px] text-muted-foreground">
         <span>
-          {accounts.length}개 계정 · 사용량 자동 조회 60초 · 화면 갱신 5초
+          {accounts.length}개 계정 ·{" "}
+          {isAndroid()
+            ? "선택한 자동 조회 설정 적용 · 마지막 관측값"
+            : "사용량 자동 조회 60초 · 화면 갱신 5초"}
         </span>
-        <span>창을 닫아도 자동 조회 · 관측 시각 기준</span>
+        <span>
+          {isAndroid()
+            ? "화면을 닫아도 백그라운드 예약 · 절전 시 지연 가능"
+            : "창을 닫아도 자동 조회 · 관측 시각 기준"}
+        </span>
       </footer>
       <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
         <DialogContent className="sm:max-w-sm" showCloseButton={false}>
@@ -491,7 +606,10 @@ export function DesktopApp() {
             <p>버전 {productVersion}</p>
             <p>기반 프로젝트: codex-lb · MIT</p>
             <p>
-              macOS {minimumMacOS} 이상 · Windows 10/11 (x64) · 계정 모니터링
+              {isAndroid()
+                ? "Android 8.0 이상 · ARM64 · 미리보기"
+                : `macOS ${minimumMacOS} 이상 · Windows 10/11 (x64)`}{" "}
+              · 계정 모니터링
             </p>
           </div>
           <DialogFooter>
@@ -516,24 +634,35 @@ export function DesktopApp() {
             </DialogDescription>
           </DialogHeader>
           {device && (
-            <div className="space-y-4">
+            <div className="login-content space-y-4">
               <CopyField label="로그인 주소" value={device.verification_url} />
               <CopyField label="인증 코드" value={device.user_code} />
               <p className="text-xs text-muted-foreground">
                 만료: {new Date(device.expires_at).toLocaleString("ko-KR")} ·
-                승인 후 자동 연결됩니다.
+                브라우저에서 승인한 뒤 이 앱으로 돌아오세요.
               </p>
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() =>
-                  void perform(async () => {
-                    await invoke("open_login_page");
-                  })
-                }
-              >
-                기본 브라우저로 열기
-              </Button>
+              <div className="login-actions">
+                <Button
+                  disabled={busy}
+                  onClick={() =>
+                    void perform(async () => {
+                      await invoke("open_login_page");
+                    })
+                  }
+                >
+                  기본 브라우저로 열기
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => void checkLogin.current()}
+                >
+                  연결 상태 다시 확인
+                </Button>
+              </div>
+              <p role="status" className="text-xs text-muted-foreground">
+                {error ||
+                  "브라우저에 ‘로그인됨’이 표시되면 이 앱으로 돌아와 연결을 확인하세요."}
+              </p>
             </div>
           )}
           {!device && (
@@ -563,7 +692,7 @@ export function DesktopApp() {
             <DialogTitle>계정 연결을 해제할까요?</DialogTitle>
             <DialogDescription>
               이 앱에 저장된 계정 연결을 제거합니다. 다시 로그인해 연결할 수
-              있습니다. 이 Mac에 저장된 모니터링 이력은 유지됩니다.
+              있습니다. 이 기기에 저장된 모니터링 이력은 유지됩니다.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

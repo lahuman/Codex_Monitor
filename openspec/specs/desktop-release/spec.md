@@ -96,3 +96,11 @@ Generated installation guides and release notes SHALL link to the canonical case
 #### Scenario: Recipient needs installation help
 - **WHEN** a recipient opens the Mac guide or a new shared release
 - **THEN** product-branded guidance links to https://lahuman.github.io/Codex_Monitor/ and its platform documentation rather than a lower-case Pages path.
+
+
+### Requirement: Native tests follow the shared application library
+Desktop release jobs SHALL run the shared Tauri library tests and server library/login/persistence tests on each native platform before packaging. They SHALL run the complete desktop/mobile dashboard test directory rather than a historical list of files. Publication SHALL remain gated on both native jobs succeeding.
+
+#### Scenario: Shared mobile and desktop entry point
+- **WHEN** the executable delegates to a shared library
+- **THEN** the native release jobs execute the library's monitoring/history tests rather than reporting success from an empty executable test suite.

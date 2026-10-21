@@ -1,0 +1,3 @@
+- [x] Implement compact mobile account cards and navigation/settings menu.
+- [x] Retain unknown/stale/error, voucher and history semantics through shared owners.
+- [x] Verify phone widths, controls and desktop regression; package update APK.

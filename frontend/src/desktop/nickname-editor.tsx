@@ -1,3 +1,4 @@
+import { isAndroid } from "./platform";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ export function NicknameEditor({
         void onSave(value);
       }}
     >
-      <label htmlFor={id}>메뉴 막대 별명</label>
+      <label htmlFor={id}>{isAndroid() ? "계정 별명" : "메뉴 막대 별명"}</label>
       <div className="flex gap-2">
         <Input
           id={id}
@@ -43,7 +44,7 @@ export function NicknameEditor({
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        최대 24글자 · 메뉴 막대에는 8글자까지 · 비우면 기본 계정명의 앞 3글자
+        최대 24글자 · {isAndroid() ? "위젯" : "메뉴 막대"}에는 8글자까지 · 비우면 기본 계정명의 앞 3글자
       </p>
     </form>
   );

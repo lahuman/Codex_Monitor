@@ -2,11 +2,11 @@
 
 # Codex Monitor
 
-**여러 Codex 계정의 잔여 한도와 초기화권을 한곳에서 확인하는 데스크톱 앱입니다.**
+**여러 Codex 계정의 잔여 한도와 초기화권을 한곳에서 확인하는 macOS·Windows·Android 앱입니다.**
 
 한국어 | [English](README.en.md)
 
-[Soju06/codex-lb](https://github.com/Soju06/codex-lb)의 소스와 대시보드에서 출발해, 계정 모니터링에 집중하도록 Rust·Tauri 기반 설치형 앱으로 구성했습니다. 원본 프런트엔드의 UI 기반을 활용하고, 계정 서비스·자동 조회·메뉴 막대·로컬 이력·배포 구성을 추가했습니다. [모티브와 코드 출처](docs/monitor/provenance.md)
+[Soju06/codex-lb](https://github.com/Soju06/codex-lb)의 소스와 대시보드에서 출발해, 계정 모니터링에 집중하도록 Rust·Tauri 기반 설치형 앱으로 구성했습니다. 원본 프런트엔드의 UI 기반을 활용하고, 계정 서비스·자동 조회·메뉴 막대·모바일 대시보드·Android 홈 위젯·로컬 이력·배포 구성을 추가했습니다. [모티브와 코드 출처](docs/monitor/provenance.md)
 
 ## 주요 기능
 
@@ -15,8 +15,9 @@
 | 계정별 한도 | 제공자가 반환한 기간별 잔여율, 초기화 예정 시각과 계정 플랜 |
 | 초기화권 | 수량·만료일·남은 기간, 7일 미만 주의 / 24시간 이하 만료 임박 경고 |
 | 메뉴 막대·트레이 | macOS는 별명·잔여율 두 줄과 빠른 보기, Windows는 아이콘·툴팁·메뉴로 확인; 창을 닫아도 조회 유지 |
-| 자동·수동 조회 | 계정당 자동 조회 시도 간격 최소 60초, 새로고침 버튼 제공 |
-| 사용 이력 | 최근 24시간 잔여 한도 그래프와 비교 가능한 약 1시간 감소량 |
+| 자동·수동 조회 | 데스크톱은 계정당 최소 60초, Android는 끄기·1·5·10·30·60·100분 선택과 수동 수집 |
+| Android 위젯 | 계정별 또는 전체 비교, 원형·막대, 테마·이름 숨김, 기간별 초기화 시각과 상단 갱신 시각 |
+| 사용 이력 | 최근 24시간 잔여 한도 그래프와 비교 가능한 1·3·6시간 감소량 |
 | 상태·알림 | 정상·부족·소진·미확인·정지 구분, 계정별 앱 내 한도 부족 알림 |
 | 계정 관리 | 기기 코드 로그인, 로그인 주소·코드 복사, auth.json 가져오기, 일시 정지·연결 해제 |
 | 화면 | 밝은/어두운 테마, 간결한 차트 범례, 앱 이름·버전 정보 |
@@ -29,10 +30,11 @@
 | --- | --- |
 | macOS Apple Silicon | 앱 실행과 DMG·ZIP 패키징 검증 완료 |
 | macOS Intel | 빌드 경로는 있으나 실행·설치 미검증, 이 작업에서 바이너리 미생성 |
-| Windows 10 / 11 x64 | NSIS 설치 파일 빌드·테스트 자동화 준비; 네이티브 CI 실행과 실제 PC 검증 대기 |
+| Windows 10 / 11 x64 | 네이티브 CI에서 Rust/UI 테스트와 NSIS 빌드; 실제 PC 설치·로그인 검증은 별도 |
+| Android 8.0 이상 ARM64 | 휴대폰 독립 계정 연결·조회와 위젯 APK 미리보기 제공 |
 | Linux | 현재 배포 파일과 실행 검증 없음 |
 
-현재 앱 버전은 **0.1.10**, macOS 최소 시스템 설정은 **13.3**입니다. `0.1.1`부터 앱 전체 자체 서명(Ad-hoc)을 적용합니다. Developer ID 서명·Apple 공증은 미적용이며 첫 실행 시 macOS 승인이 필요할 수 있습니다. [Mac 설치 문제 확인](docs/monitor/macos-installation.md)
+현재 앱 버전은 **0.1.21**, macOS 최소 시스템 설정은 **13.3**입니다. `0.1.1`부터 앱 전체 자체 서명(Ad-hoc)을 적용합니다. Developer ID 서명·Apple 공증은 미적용이며 첫 실행 시 macOS 승인이 필요할 수 있습니다. [Mac 설치 문제 확인](docs/monitor/macos-installation.md)
 
 ## 설치와 시작
 
@@ -53,7 +55,7 @@ Rust 1.96.0, Node.js 22.12 이상(또는 20.19 이상인 20.x), Bun 1.3.14, Xcod
 
 ```sh
 git clone https://github.com/lahuman/Codex_Monitor.git
-cd codex_Monitor
+cd Codex_Monitor
 cd frontend
 bun install --frozen-lockfile
 cd ../desktop
@@ -70,13 +72,16 @@ npm run package:macos
 
 아이콘을 재생성하고 최적화 앱·DMG·ZIP·SHA-256 체크섬을 만듭니다. 기존 릴리스 폴더는 덮어쓰지 않습니다. [개발·구조·테스트](docs/monitor/development.md) · [GitHub 게시 안내](docs/monitor/publishing.md)
 
+Android APK는 [Android 안내](docs/monitor/android.md)에서 받습니다. 휴대폰에서 직접 계정을 연결하며, 백그라운드 수집은 Android 예약·배터리 정책에 따라 최소 15분 간격으로 동작합니다.
+
 ## 프로젝트 범위와 문서
 
 현재 배포 앱의 범위는 계정 모니터링입니다. 요청 중계, 로드밸런싱, 프록시 API 키 관리, 모델 생성 요청은 제공 기능에 포함되지 않으며, 초기화권을 사용하는 버튼도 구현하지 않았습니다.
 
 저장소에는 원본 서비스의 Python 코드와 문서가 함께 남아 있습니다. 기본 데스크톱 빌드에서는 `legacy-relay` 기능을 활성화하지 않습니다. 원본 서버의 Docker·프록시 설정은 [보존한 원본 README](README.upstream.md)에서 확인할 수 있습니다.
 
-- [문서 시작](docs/monitor/index.md)
+- [문서 시작](docs/monitor/index.md) · [0.1.21 전체 작업·검증 정리](docs/monitor/releases.md)
+- [Android 설치·조회·위젯 설정](docs/monitor/android.md)
 - [기능과 지표 설명](docs/monitor/features.md)
 - [개발 환경·아키텍처·테스트](docs/monitor/development.md)
 - [모티브·재사용 코드·크레딧](docs/monitor/provenance.md)

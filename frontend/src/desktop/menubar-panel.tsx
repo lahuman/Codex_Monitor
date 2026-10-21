@@ -1,3 +1,4 @@
+import { quotaTone } from "./insights-model";
 import { ResetCreditsPanel } from "./reset-credits";
 import { urgentVoucherLabel } from "./reset-credits-model";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -199,7 +200,10 @@ export function MenuBarPanel() {
           <section className="menubar-quotas" aria-label="현재 잔여 한도">
             {windows.length ? (
               windows.map((w) => (
-                <article key={w.period}>
+                <article
+                  key={w.period}
+                  className={`quota-tone-${quotaTone(w.remaining, !usable)}`}
+                >
                   <div className="menubar-quota-title">
                     <span>{w.label}</span>
                     <strong>

@@ -1,6 +1,6 @@
 {
   "name": "codex-lb-desktop",
-  "version": "0.1.11",
+  "version": "0.1.21",
   "private": true,
   "scripts": {
     "dev": "tauri dev",
@@ -12,7 +12,10 @@
     "build:windows": "tauri build --target x86_64-pc-windows-msvc --bundles nsis -- --locked",
     "package:windows": "node scripts/package-windows.mjs",
     "test:packaging": "node --test scripts/pe.test.mjs",
-    "test:macos-packaging": "node --test scripts/macos-installation-guide.test.mjs scripts/macos-verification.test.mjs"
+    "test:macos-packaging": "node --test scripts/macos-installation-guide.test.mjs scripts/macos-verification.test.mjs",
+    "android:init": "tauri android init",
+    "android:build": "tauri android build --debug --features android-worker --apk --target aarch64 --config src-tauri/tauri.android.conf.json",
+    "package:android": "node scripts/package-android.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.3"

@@ -1,0 +1,9 @@
+# Inline widget bars (0.1.19)
+
+Horizontal quota presentation now uses one row for a decorative color-matched period dot, period label, 12dp rounded track and trailing percentage. Overview bars were 4dp; selected-account bars were 7dp. Percentage values remain native accessible text, right-aligned outside the track. Unknown stays an em dash and zero remains 0%; stale/error values retain muted colors. Rings keep their existing layout.
+
+Each quota period owns its inline row. Overview capacity now budgets by canonical window count instead of assuming equal-height accounts, so two-period accounts cannot overflow the previous one-period estimate. Up to four accounts are shown with the visible/total count. Card sizing, settings, account selection, observation timestamps and collection schedule are unchanged. One row uses a bounded 256×24 ARGB bitmap (24 KiB); rendering creates no provider requests or additional timers.
+
+Android 16 ARM64 emulator: update install from 0.1.18; all seven native instrumentation tests passed. Real RemoteViews measurements verify that the value follows the track, centers vertically on it, stays within its row, and leaves a visible track at 180/280/360dp widths. The two-account 48%/68% single-period fixture still fits 280×180dp. Light/dark, multi-period, 100%, zero/unknown, compact rings, settings save/cancel, restore/delete and pin ownership were checked. The native screens were reviewed visually. Physical Samsung rendering and customized font scales remain unverified.
+
+Screenshot: docs/monitor/assets/android-widget-inline.png (synthetic data). Before: android-widget-compact.png. Strict OpenSpec 1.11.0 validation: 75 specs; strict MkDocs build passed. APK packaging checks version 0.1.19, ARM64, package identity and the unchanged preview signing certificate.

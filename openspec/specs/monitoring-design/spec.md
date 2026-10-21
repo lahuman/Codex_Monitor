@@ -18,3 +18,15 @@ The app SHALL use scoped warm cream, coral, ink and hairline tokens with a reada
 #### Scenario: Theme and width
 - **WHEN** a user changes theme or uses the supported minimum window width
 - **THEN** data labels, controls and chart legends remain readable without horizontal page overflow.
+
+
+### Requirement: Consistent readable application surfaces
+Dashboard, account management, quick view and dialogs SHALL share readable typography, quota color tokens and clear action hierarchy. Core controls SHALL have visible keyboard focus. On phone layouts, buttons and fields SHALL have 44 CSS pixel touch height, dialogs SHALL remain reachable on short screens, and account identities SHALL wrap without page overflow.
+
+#### Scenario: Manage an account on a phone
+- **WHEN** account management or login opens at 360 CSS pixels wide
+- **THEN** identity, quota and all actions remain readable and reachable without horizontal scrolling.
+
+#### Scenario: Compare quotas between screens
+- **WHEN** quota is shown on dashboard, account management or quick view
+- **THEN** fresh values use the same green/yellow/orange/red thresholds, while stale/paused/error values remain labeled and muted and unknown values stay unknown.

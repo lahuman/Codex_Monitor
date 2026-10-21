@@ -35,6 +35,8 @@ npm run dev
 | `npm run build:preview` | 디버그 앱 생성 |
 | `npm run build` | 최적화 앱 생성 |
 | `npm run icons` | SVG 원본에서 macOS 아이콘 재생성 |
+| `npm run package:windows` | Windows 네이티브 NSIS 설치 파일·체크섬 생성 |
+| `npm run package:android` | Android ARM64 미리보기 APK·서명·체크섬 검증 |
 | `npm run package:macos` | 아이콘 재생성, 최적화 앱과 DMG·ZIP·체크섬 생성 |
 
 앱 이름과 버전은 `desktop/src-tauri/tauri.conf.json`, 아이콘 원본은 `desktop/branding/icon.svg`가 기준입니다. 내부 bundle identifier는 기존 데이터 경로를 유지하기 위해 `local.codex-lb.desktop.preview`를 사용합니다.
@@ -43,12 +45,13 @@ npm run dev
 
 | 경로 | 역할 |
 | --- | --- |
-| `desktop/src-tauri/src/` | Tauri 명령, 공통 모니터, 로컬 관측 이력, macOS 메뉴 막대 |
+| `desktop/src-tauri/src/` | 공통 Tauri 라이브러리, 명령, 모니터, 이력, macOS 메뉴 막대, Android 백그라운드 브리지 |
+| `desktop/src-tauri/gen/android/` | 네이티브 위젯·설정·WorkManager, Gradle 소스·계측 테스트 |
 | `crates/codex-lb-server/src/business.rs` | 계정·OAuth·인증 갱신·제공자 조회 |
 | `crates/codex-lb-server/src/storage.rs` | 데스크톱 전용 암호화 저장소 |
 | `frontend/src/desktop/` | 대시보드·계정 UI와 표시 모델 |
 | `frontend/src/components/` 등 | 원본에서 이어받은 공통 UI 기반 |
-| `desktop/scripts/` | 아이콘 생성과 macOS 패키징 |
+| `desktop/scripts/` | 아이콘, macOS·Windows·Android 패키징과 통합 릴리즈 검증 |
 | `openspec/specs/` | 기능 계약과 검증 범위 |
 | `app/`, 기존 프록시 크레이트·문서 | 함께 보존된 원본 서비스 코드와 자료 |
 
@@ -76,9 +79,10 @@ flowchart LR
 
 ```sh
 npm --prefix desktop run build:dashboard
-bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx src/desktop/reset-credits.test.tsx
-bun run --cwd frontend lint src/desktop
-cargo test -p codex-lb-desktop --bin codex-lb-desktop
+bun run --cwd frontend test src/desktop
+bun --cwd frontend ./node_modules/eslint/bin/eslint.js src/desktop
+cargo test --locked -p codex-lb-desktop --lib
+cargo test --locked -p codex-lb-server --features legacy-relay --lib --test device_login --test workflow
 cargo clippy -p codex-lb-desktop -p codex-lb-server --all-targets -- -D warnings
 ```
 
@@ -94,3 +98,10 @@ Windows x64는 [별도 안내](windows.md)의 C++ Build Tools·WebView2·NASM �
 Windows 계정·이력 저장소는 Tauri의 앱 데이터 디렉터리인 `%APPDATA%\local.codex-lb.desktop.preview\`에 있습니다. Windows에서는 파일 내용을 동기화하고 원자적으로 교체하며, Unix 전용 부모 디렉터리 동기화는 실행하지 않습니다. 같은 식별자를 사용해 같은 플랫폼 내 업데이트에서 저장소를 유지하며, 다른 OS로 계정이 자동 이전되지는 않습니다.
 
 프로젝트 소개 페이지의 소스는 `website/`, 생성 명령은 `node scripts/desktop/build-website.mjs`입니다. [Pages 안내](website.md)를 참고하세요.
+
+
+## 공유 라이브러리와 플랫폼 경계
+
+`src/main.rs`는 `codex_lb_desktop_lib::run()`으로 위임합니다. 모니터·이력·메뉴 막대 테스트는 **라이브러리**에 있으므로 `--lib`로 실행합니다. Android는 데스크톱 트레이·단일 인스턴스·창 닫기 동작을 설치하지 않습니다. `android-worker` 기능의 UniFFI 브리지가 같은 Rust 서비스와 수집 잠금을 사용하고, Kotlin 위젯은 토큰 없는 스냅샷을 표시합니다.
+
+Android 네이티브 소스는 저장소에 포함하며 `tauri android init`으로 덮어쓰지 않습니다. JDK·SDK·NDK와 전용 에뮬레이터 검증은 [Android 안내](android.md)를 따릅니다. [작업·검증 정리](releases.md)에서 완료 범위와 실제 기기 미검증 항목을 구분합니다.

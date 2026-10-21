@@ -1,0 +1,16 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="top" android:orientation="vertical" android:padding="8dp" android:background="@drawable/widget_background">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="40dp" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+      <TextView android:id="@+id/widget_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="전체 계정" android:textSize="17sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:textColor="#191b19" />
+      <TextView android:id="@+id/widget_subtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="저장된 잔여 한도" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" android:textColor="#626962" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/widget_settings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="40dp" android:layout_marginStart="8dp" android:orientation="vertical" android:gravity="end|center_vertical" android:contentDescription="위젯 표시 설정">
+      <TextView android:id="@+id/widget_update_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="end" android:text="갱신 · 설정" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+      <TextView android:id="@+id/widget_updated" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="end" android:text="관측 전" android:textSize="11sp" android:includeFontPadding="false" android:layout_marginTop="3dp" android:maxLines="1" />
+    </LinearLayout>
+  </LinearLayout>
+  <LinearLayout android:id="@+id/widget_accounts" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+  <TextView android:id="@+id/widget_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end" android:textSize="11sp" android:textColor="#626962" android:layout_marginTop="3dp" />
+</LinearLayout>
+</FrameLayout>

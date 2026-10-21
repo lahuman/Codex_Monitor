@@ -6,7 +6,7 @@
 
 Codex Monitor는 [Soju06/codex-lb](https://github.com/Soju06/codex-lb) 저장소에서 출발한 파생 프로젝트입니다. 계정별 상태와 사용량을 한눈에 보여 주는 [원본 대시보드](https://soju06.github.io/codex-lb/)가 제품의 가장 직접적인 모티브입니다.
 
-이 저장소는 원본 코드가 포함된 파생 프로젝트이며, 프런트엔드의 공통 컴포넌트·스타일 기반·번역·테마·개인정보 표시 훅 등을 활용합니다. 데스크톱 계정 서비스, OAuth 흐름, 사용량 조회 계약을 Rust로 구성하고 Tauri 창·메뉴 막대·로컬 관측 이력과 연결했습니다.
+이 저장소는 원본 코드가 포함된 파생 프로젝트이며, 프런트엔드의 공통 컴포넌트·스타일 기반·번역·테마·개인정보 표시 훅 등을 활용합니다. 계정 서비스, OAuth 흐름, 사용량 조회 계약을 Rust로 구성하고 Tauri 창·메뉴 막대·모바일 대시보드·로컬 관측 이력과 연결했습니다. Android 홈 위젯과 WorkManager는 Kotlin으로 구현하고 같은 Rust 서비스의 토큰 없는 관측을 표시합니다.
 
 `desktop/upstream.json`에 기록된 기준 커밋은 `f8ffbac2099a113fba54dfd8d77774f5bca80ffa`입니다. 이것은 출발점 추적 정보이며 원본의 최신 기능 전체를 이식하거나 검증했다는 의미는 아닙니다.
 
@@ -14,7 +14,7 @@ Codex Monitor는 [Soju06/codex-lb](https://github.com/Soju06/codex-lb) 저장소
 | --- | --- |
 | 원본 저장소·대시보드 | 소스 기반, 계정 모니터링 제품 아이디어, 공통 React UI 기반 |
 | Rust·Tauri 추가 구현 | 데스크톱 계정 서비스, 공통 조회 소유자, IPC, 메뉴 막대, 로컬 이력, 초기화권 표시와 패키징 |
-| 현재 제품 범위 | 설치형 계정 모니터링 앱 |
+| 현재 제품 범위 | macOS·Windows·Android 계정 모니터링과 Android 홈 위젯 |
 | 함께 남아 있는 코드 | 원본 Python 서비스와 프록시 관련 코드·문서; 기본 앱의 제공 기능과 구분 |
 
 원본 README와 기여자 고지는 [README.upstream.md](https://github.com/lahuman/Codex_Monitor/blob/main/README.upstream.md)에 그대로 보존했습니다. 원본의 저작권·라이선스 고지는 [LICENSE](https://github.com/lahuman/Codex_Monitor/blob/main/LICENSE)에 있습니다.

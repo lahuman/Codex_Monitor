@@ -133,6 +133,8 @@ struct Data {
     local_key: String,
     accounts: Vec<Account>,
     requests: Vec<RequestRecord>,
+    #[serde(default)]
+    pending_device_login: Option<DeviceFlow>,
 }
 struct State {
     data: Data,
@@ -164,22 +166,32 @@ pub struct Credential {
     pub account_id: String,
     pub access_token: String,
 }
-#[derive(Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct DeviceView {
     pub user_code: String,
     pub verification_url: String,
     pub interval_seconds: u64,
     pub expires_at: DateTime<Utc>,
 }
+#[derive(Clone, Deserialize, Serialize)]
 struct DeviceFlow {
     view: DeviceView,
     id: String,
-    next_poll: std::time::Instant,
+    next_poll: DateTime<Utc>,
+    phase: DevicePhase,
+}
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(tag = "phase", rename_all = "snake_case")]
+enum DevicePhase {
+    Waiting,
+    Exchange { code: String, verifier: String },
+    Tokens { tokens: Tokens },
 }
 #[derive(Serialize)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum LoginStatus {
     Pending,
+    Retrying { message: String },
     Connected { account: AccountSummary },
 }
 pub const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
@@ -220,6 +232,7 @@ impl Service {
             local_key: random_key()?,
             accounts: vec![],
             requests: vec![],
+            pending_device_login: None,
         });
         if data.version != 1 {
             return Err(Error::Storage);
@@ -230,6 +243,10 @@ impl Service {
                 record.finished_at = Some(Utc::now());
             }
         }
+        data.pending_device_login = data
+            .pending_device_login
+            .filter(|flow| Utc::now() < flow.view.expires_at);
+        let device = data.pending_device_login.clone();
         vault.save(&data)?;
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
@@ -241,7 +258,7 @@ impl Service {
             vault,
             state: Mutex::new(State { data, dirty: false }),
             auth_gate: AsyncMutex::new(()),
-            device: AsyncMutex::new(None),
+            device: AsyncMutex::new(device),
             client,
             endpoints,
             #[cfg(feature = "legacy-relay")]
@@ -629,11 +646,14 @@ impl Service {
             interval_seconds: interval,
             expires_at: Utc::now() + chrono::Duration::seconds(expiry),
         };
-        *flow = Some(DeviceFlow {
+        let pending = DeviceFlow {
             view: view.clone(),
             id,
-            next_poll: std::time::Instant::now() + Duration::from_secs(interval),
-        });
+            next_poll: Utc::now() + chrono::Duration::seconds(interval as i64),
+            phase: DevicePhase::Waiting,
+        };
+        self.store_device_flow(Some(pending.clone()))?;
+        *flow = Some(pending);
         Ok(view)
     }
     pub async fn pending_login(&self) -> Result<DeviceView> {
@@ -644,58 +664,99 @@ impl Service {
             .ok_or(Error::Expired)?;
         Ok(flow.view.clone())
     }
-    pub async fn cancel_login(&self) {
-        *self.device.lock().await = None;
+    fn store_device_flow(&self, flow: Option<DeviceFlow>) -> Result<()> {
+        let mut state = self.state()?;
+        let previous = state.data.pending_device_login.clone();
+        state.data.pending_device_login = flow;
+        if let Err(error) = self.persist(&mut state) {
+            state.data.pending_device_login = previous;
+            return Err(error);
+        }
+        Ok(())
+    }
+    pub async fn cancel_login(&self) -> Result<()> {
+        let mut holder = self.device.lock().await;
+        self.store_device_flow(None)?;
+        *holder = None;
+        Ok(())
     }
     pub async fn poll_login(&self) -> Result<LoginStatus> {
+        match self.poll_login_inner().await {
+            Err(Error::Network | Error::Storage | Error::Upstream(429 | 500..=599)) => Ok(LoginStatus::Retrying {
+                message: "연결 확인이 일시적으로 지연되고 있습니다. 앱으로 돌아온 상태에서 다시 확인해 주세요.".into(),
+            }),
+            result => result,
+        }
+    }
+    async fn poll_login_inner(&self) -> Result<LoginStatus> {
         let mut holder = self.device.lock().await;
-        let flow = holder.as_mut().ok_or(Error::Expired)?;
+        let mut flow = holder.clone().ok_or(Error::Expired)?;
         if Utc::now() >= flow.view.expires_at {
+            self.store_device_flow(None)?;
             *holder = None;
             return Err(Error::Expired);
         }
-        if std::time::Instant::now() < flow.next_poll {
+        if Utc::now() < flow.next_poll {
             return Ok(LoginStatus::Pending);
         }
-        flow.next_poll =
-            std::time::Instant::now() + Duration::from_secs(flow.view.interval_seconds);
-        let response = self
-            .client
-            .post(format!(
-                "{}/api/accounts/deviceauth/token",
-                self.endpoints.auth
-            ))
-            .timeout(Duration::from_secs(30))
-            .json(&json!({"device_auth_id":flow.id,"user_code":flow.view.user_code}))
-            .send()
-            .await
-            .map_err(|_| Error::Network)?;
-        if matches!(response.status().as_u16(), 403 | 404) {
-            return Ok(LoginStatus::Pending);
-        }
-        let status = response.status();
-        let mut value: Value = serde_json::from_slice(&bounded_bytes(response, 1024 * 1024).await?)
-            .map_err(|_| Error::Protocol)?;
-        let code = value["error"]
-            .as_str()
-            .or_else(|| value["error"]["code"].as_str())
-            .or_else(|| value["code"].as_str());
-        if matches!(code, Some("authorization_pending" | "slow_down")) {
-            if code == Some("slow_down") {
-                flow.view.interval_seconds = (flow.view.interval_seconds + 5).min(60);
+        flow.next_poll = Utc::now() + chrono::Duration::seconds(flow.view.interval_seconds as i64);
+        self.store_device_flow(Some(flow.clone()))?;
+        *holder = Some(flow.clone());
+        if matches!(flow.phase, DevicePhase::Waiting) {
+            let response = self
+                .client
+                .post(format!(
+                    "{}/api/accounts/deviceauth/token",
+                    self.endpoints.auth
+                ))
+                .timeout(Duration::from_secs(30))
+                .json(&json!({"device_auth_id":flow.id,"user_code":flow.view.user_code}))
+                .send()
+                .await
+                .map_err(|_| Error::Network)?;
+            if matches!(response.status().as_u16(), 403 | 404) {
+                return Ok(LoginStatus::Pending);
             }
-            flow.next_poll =
-                std::time::Instant::now() + Duration::from_secs(flow.view.interval_seconds);
-            return Ok(LoginStatus::Pending);
+            let status = response.status();
+            if status.is_server_error() || status.as_u16() == 429 {
+                return Err(Error::Upstream(status.as_u16()));
+            }
+            let value: Value = serde_json::from_slice(&bounded_bytes(response, 1024 * 1024).await?)
+                .map_err(|_| Error::Protocol)?;
+            let error = value["error"]
+                .as_str()
+                .or_else(|| value["error"]["code"].as_str());
+            if matches!(error, Some("authorization_pending" | "slow_down")) {
+                if error == Some("slow_down") {
+                    flow.view.interval_seconds = (flow.view.interval_seconds + 5).min(60);
+                }
+                flow.next_poll =
+                    Utc::now() + chrono::Duration::seconds(flow.view.interval_seconds as i64);
+                self.store_device_flow(Some(flow.clone()))?;
+                *holder = Some(flow);
+                return Ok(LoginStatus::Pending);
+            }
+            if !status.is_success() {
+                return Err(Error::Upstream(status.as_u16()));
+            }
+            flow.phase = if let Some(code) = value["authorization_code"].as_str() {
+                DevicePhase::Exchange {
+                    code: code.to_owned(),
+                    verifier: value["code_verifier"]
+                        .as_str()
+                        .ok_or(Error::Protocol)?
+                        .to_owned(),
+                }
+            } else {
+                DevicePhase::Tokens {
+                    tokens: serde_json::from_value(value).map_err(|_| Error::Protocol)?,
+                }
+            };
+            self.store_device_flow(Some(flow.clone()))?;
+            *holder = Some(flow.clone());
         }
-        if !status.is_success() {
-            return Err(Error::Upstream(status.as_u16()));
-        }
-        // Consume the flow before a one-shot authorization-code exchange.
-        *holder = None;
-        if let Some(code) = value["authorization_code"].as_str() {
-            let verifier = value["code_verifier"].as_str().ok_or(Error::Protocol)?;
-            value = checked_json(
+        if let DevicePhase::Exchange { code, verifier } = &flow.phase {
+            let value = checked_json(
                 self.client
                     .post(format!("{}/oauth/token", self.endpoints.auth))
                     .timeout(Duration::from_secs(30))
@@ -714,12 +775,20 @@ impl Service {
                     .map_err(|_| Error::Network)?,
             )
             .await?;
+            flow.phase = DevicePhase::Tokens {
+                tokens: serde_json::from_value(value).map_err(|_| Error::Protocol)?,
+            };
+            self.store_device_flow(Some(flow.clone()))?;
+            *holder = Some(flow.clone());
         }
-        let tokens: Tokens = serde_json::from_value(value).map_err(|_| Error::Protocol)?;
+        let DevicePhase::Tokens { tokens } = flow.phase else {
+            return Err(Error::Protocol);
+        };
         let _gate = self.auth_gate.lock().await;
-        Ok(LoginStatus::Connected {
-            account: self.save_tokens(tokens)?,
-        })
+        let account = self.save_tokens(tokens)?;
+        self.store_device_flow(None)?;
+        *holder = None;
+        Ok(LoginStatus::Connected { account })
     }
 }
 pub(crate) async fn bounded_bytes(mut response: reqwest::Response, max: usize) -> Result<Vec<u8>> {

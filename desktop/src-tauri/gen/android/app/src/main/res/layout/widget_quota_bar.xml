@@ -1,0 +1,9 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_bar_root" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="24dp" android:gravity="center_vertical" android:orientation="horizontal">
+    <TextView android:id="@+id/widget_period_dot" android:layout_width="6dp" android:layout_height="wrap_content" android:layout_marginEnd="4dp" android:text="●" android:textSize="7sp" android:includeFontPadding="false" android:importantForAccessibility="no" />
+    <TextView android:id="@+id/widget_window_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textSize="11sp" android:includeFontPadding="false" android:maxLines="1" />
+    <ImageView android:id="@+id/widget_graph" android:layout_width="0dp" android:layout_weight="1" android:layout_height="12dp" android:scaleType="fitXY" android:importantForAccessibility="no" />
+    <TextView android:id="@+id/widget_window_value" android:layout_width="wrap_content" android:minWidth="48dp" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:gravity="end" android:textSize="20sp" android:includeFontPadding="false" android:textStyle="bold" android:maxLines="1" />
+  </LinearLayout>
+  <TextView android:id="@+id/widget_window_reset" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end" android:textSize="11sp" android:includeFontPadding="false" android:breakStrategy="simple" />
+</LinearLayout>

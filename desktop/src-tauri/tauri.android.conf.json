@@ -1,0 +1,17 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Codex Monitor",
+        "width": 400,
+        "height": 820
+      }
+    ]
+  },
+  "bundle": {
+    "android": {
+      "minSdkVersion": 26
+    }
+  }
+}

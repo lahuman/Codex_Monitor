@@ -332,93 +332,6 @@ pub fn stop(app: &tauri::AppHandle) {
     clear_account_items(app);
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    fn account(id: &str, used: Option<f64>) -> AccountSummary {
-        AccountSummary {
-            id: id.into(),
-            account_id: id.into(),
-            email: None,
-            plan: None,
-            paused: false,
-            quota: Some(
-                serde_json::json!({"rate_limit":{"primary_window":{"used_percent":used,"limit_window_seconds":604800}}}),
-            ),
-            quota_observed_at: None,
-        }
-    }
-    #[test]
-    fn per_account_percentage_is_not_averaged() {
-        let view = present(
-            &[account("one", Some(51.0)), account("two", Some(86.0))],
-            &HashMap::new(),
-            0,
-            &BTreeMap::new(),
-        );
-        assert!(view.title.starts_with("🪙 "));
-        assert_eq!(view.columns[0].label, "one");
-        assert_eq!(view.columns[0].quota_text(), "49%~");
-        assert_eq!(view.columns[0].quota, vec![Some(49.0)]);
-        assert_eq!(view.columns[1].label, "two");
-        assert_eq!(view.columns[1].quota_text(), "14%~");
-        assert!(view.rows.iter().any(|r| r == "🔵 one"));
-        assert!(view.rows.iter().any(|r| r == "🟢 two"));
-        assert!(view.title.contains("🔵 49%"));
-        assert!(view.title.contains("🟢 14%"));
-        assert!(
-            view.rows
-                .iter()
-                .any(|r| r.contains("주간: 사용 51% · 잔여 49%"))
-        );
-    }
-    #[test]
-    fn unknown_and_failed_observations_remain_explicit() {
-        let view = present(
-            &[account("one", None)],
-            &HashMap::from([("one".into(), "network".into())]),
-            0,
-            &BTreeMap::new(),
-        );
-        assert!(view.title.contains("— !"));
-        assert_eq!(view.columns[0].quota_text(), "—!");
-        assert!(view.rows.iter().any(|r| r.contains("조회 실패: network")));
-        assert!(view.rows.iter().any(|r| r.contains("조회 전")));
-    }
-    #[test]
-    fn replacement_account_with_identical_visible_data_updates_click_identity() {
-        let first = account("first", Some(51.0));
-        let mut replacement = first.clone();
-        replacement.id = "second".into();
-        let before = present(&[first], &HashMap::new(), 0, &BTreeMap::new());
-        let after = present(&[replacement], &HashMap::new(), 0, &BTreeMap::new());
-        assert_eq!(before.columns, after.columns);
-        assert_ne!(before, after);
-    }
-    #[test]
-    fn tooltip_fits_windows_capacity_without_splitting_unicode() {
-        let view = Presentation {
-            title: "🔵".repeat(100),
-            rows: vec![],
-            columns: vec![],
-            account_ids: vec![],
-            voucher_urgent: vec![],
-        };
-        let value = tooltip(&view);
-        assert!(value.encode_utf16().count() <= 127);
-        assert!(value.starts_with("Codex Monitor"));
-    }
-    #[test]
-    fn title_is_bounded_and_menu_keeps_every_account() {
-        let accounts = (0..100)
-            .map(|i| account(&i.to_string(), Some(10.0)))
-            .collect::<Vec<_>>();
-        let view = present(&accounts, &HashMap::new(), 0, &BTreeMap::new());
-        assert!(view.title.contains("+96"));
-        assert!(view.rows.iter().any(|r| r == "🟠 99"));
-    }
-}
-
 fn update_title(
     app: &tauri::AppHandle,
     tray: &tauri::tray::TrayIcon,
@@ -539,4 +452,91 @@ fn update_account_items(
     // Serialize native resource creation/removal on the UI thread. Never hold the
     // registry mutex on a worker while synchronously waiting for that thread.
     tray.with_inner_tray_icon(move |_| update_account_items_main(&app, &summary, &view, &accounts))?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn account(id: &str, used: Option<f64>) -> AccountSummary {
+        AccountSummary {
+            id: id.into(),
+            account_id: id.into(),
+            email: None,
+            plan: None,
+            paused: false,
+            quota: Some(
+                serde_json::json!({"rate_limit":{"primary_window":{"used_percent":used,"limit_window_seconds":604800}}}),
+            ),
+            quota_observed_at: None,
+        }
+    }
+    #[test]
+    fn per_account_percentage_is_not_averaged() {
+        let view = present(
+            &[account("one", Some(51.0)), account("two", Some(86.0))],
+            &HashMap::new(),
+            0,
+            &BTreeMap::new(),
+        );
+        assert!(view.title.starts_with("🪙 "));
+        assert_eq!(view.columns[0].label, "one");
+        assert_eq!(view.columns[0].quota_text(), "49%~");
+        assert_eq!(view.columns[0].quota, vec![Some(49.0)]);
+        assert_eq!(view.columns[1].label, "two");
+        assert_eq!(view.columns[1].quota_text(), "14%~");
+        assert!(view.rows.iter().any(|r| r == "🔵 one"));
+        assert!(view.rows.iter().any(|r| r == "🟢 two"));
+        assert!(view.title.contains("🔵 49%"));
+        assert!(view.title.contains("🟢 14%"));
+        assert!(
+            view.rows
+                .iter()
+                .any(|r| r.contains("주간: 사용 51% · 잔여 49%"))
+        );
+    }
+    #[test]
+    fn unknown_and_failed_observations_remain_explicit() {
+        let view = present(
+            &[account("one", None)],
+            &HashMap::from([("one".into(), "network".into())]),
+            0,
+            &BTreeMap::new(),
+        );
+        assert!(view.title.contains("— !"));
+        assert_eq!(view.columns[0].quota_text(), "—!");
+        assert!(view.rows.iter().any(|r| r.contains("조회 실패: network")));
+        assert!(view.rows.iter().any(|r| r.contains("조회 전")));
+    }
+    #[test]
+    fn replacement_account_with_identical_visible_data_updates_click_identity() {
+        let first = account("first", Some(51.0));
+        let mut replacement = first.clone();
+        replacement.id = "second".into();
+        let before = present(&[first], &HashMap::new(), 0, &BTreeMap::new());
+        let after = present(&[replacement], &HashMap::new(), 0, &BTreeMap::new());
+        assert_eq!(before.columns, after.columns);
+        assert_ne!(before, after);
+    }
+    #[test]
+    fn tooltip_fits_windows_capacity_without_splitting_unicode() {
+        let view = Presentation {
+            title: "🔵".repeat(100),
+            rows: vec![],
+            columns: vec![],
+            account_ids: vec![],
+            voucher_urgent: vec![],
+        };
+        let value = tooltip(&view);
+        assert!(value.encode_utf16().count() <= 127);
+        assert!(value.starts_with("Codex Monitor"));
+    }
+    #[test]
+    fn title_is_bounded_and_menu_keeps_every_account() {
+        let accounts = (0..100)
+            .map(|i| account(&i.to_string(), Some(10.0)))
+            .collect::<Vec<_>>();
+        let view = present(&accounts, &HashMap::new(), 0, &BTreeMap::new());
+        assert!(view.title.contains("+96"));
+        assert!(view.rows.iter().any(|r| r == "🟠 99"));
+    }
 }

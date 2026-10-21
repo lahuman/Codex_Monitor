@@ -11,3 +11,8 @@ The introduction now explains independent two-row macOS account menu items, rema
 Example: a 49% remaining sample is yellow, a 72% sample is green, and switching the illustrative period updates quota, reset text, interval samples and menu colors together. Six-hour history across a reset is marked unavailable.
 
 Canonical distribution links use the exact `Codex_Monitor` case from `desktop/scripts/project-links.mjs`. Version 0.1.11 refreshes download cards, Mac offline/native Installer resources and Windows NSIS header/sidebar/homepage metadata. Old release assets remain immutable. Source SVGs accompany the committed 24-bit NSIS BMPs (150x57 header, 164x314 sidebar); raster artwork was rendered at 1x from the SVG and converted to RGB BMP with Pillow, with no added runtime/build dependency. The Pages workflow checks build_type=workflow before uploading/deploying, requiring the owner to disable branch-based publishing in Settings.
+
+
+## 0.1.21 source and release handoff
+
+The completed desktop/mobile code is committed together with current documentation. Native release jobs target the shared application library and complete UI test directory. Android previews remain separate immutable assets; the new desktop release tag binds its exact tested source commit. The Pages introduction includes Android and the cached widget. Physical-device login/installation and production signing remain distinct from CI/emulator tests.

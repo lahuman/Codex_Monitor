@@ -32,3 +32,11 @@ Site metadata and current project documentation SHALL use the exact Codex_Monito
 #### Scenario: Legacy Pages source
 - **WHEN** the repository Pages source remains branch-based during a main publication
 - **THEN** the workflow reports the required Settings > Pages > GitHub Actions change before deploying.
+
+
+### Requirement: Android introduction and download guidance
+The introduction SHALL include Android ARM64 APK installation and configurable home-widget monitoring alongside desktop downloads. It SHALL disclose preview signing, Android background scheduling constraints and illustrative widget data without collecting account data.
+
+#### Scenario: Phone visitor
+- **WHEN** a visitor opens the download section on a phone
+- **THEN** they can find the existing Android preview and its setup guide without mistaking desktop installers for Android packages.

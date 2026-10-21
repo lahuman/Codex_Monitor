@@ -140,6 +140,8 @@ struct Saved {
     alerts: BTreeMap<String, AlertPreference>,
     #[serde(default)]
     nicknames: BTreeMap<String, String>,
+    #[serde(default)]
+    attempts: BTreeMap<String, i64>,
 }
 impl Default for Saved {
     fn default() -> Self {
@@ -148,6 +150,7 @@ impl Default for Saved {
             history: BTreeMap::new(),
             alerts: BTreeMap::new(),
             nicknames: BTreeMap::new(),
+            attempts: BTreeMap::new(),
         }
     }
 }
@@ -183,6 +186,8 @@ impl HistoryStore {
                 && data.history.len() <= 100
                 && data.alerts.len() <= 100
                 && data.nicknames.len() <= 100
+                && data.attempts.len() <= 100
+                && data.attempts.values().all(|at| *at > 0)
                 && data.nicknames.values().all(|n| valid_nickname(n))
                 && data.history.values().map(Vec::len).sum::<usize>() <= MAX_SAMPLES
                 && data
@@ -288,6 +293,36 @@ impl HistoryStore {
             Err(e) => self.issue = Some(format!("모니터링 기록 저장 실패: {e}")),
         };
         save
+    }
+    pub fn last_attempt(&self, id: &str) -> Option<i64> {
+        self.data.attempts.get(id).copied()
+    }
+    pub fn mark_attempt(
+        &mut self,
+        id: &str,
+        at: i64,
+        accounts: &[AccountSummary],
+    ) -> Result<(), String> {
+        if self.blocked {
+            return Err("모니터링 기록을 저장할 수 없어 자동 조회를 중단했습니다.".into());
+        }
+        let previous = self.data.attempts.clone();
+        self.data
+            .attempts
+            .retain(|key, _| accounts.iter().any(|account| account.id == *key));
+        if !accounts.iter().any(|account| account.id == id) {
+            return Err("계정을 찾을 수 없습니다.".into());
+        }
+        if self.data.attempts.len() >= 100 && !self.data.attempts.contains_key(id) {
+            self.data.attempts = previous;
+            return Err("모니터링 기록의 계정 수 한도에 도달했습니다.".into());
+        }
+        self.data.attempts.insert(id.to_owned(), at);
+        if let Err(error) = self.persist() {
+            self.data.attempts = previous;
+            return Err(error);
+        }
+        Ok(())
     }
     pub fn record(&mut self, account: &AccountSummary, now: i64) {
         let before = self.data.history.values().map(Vec::len).sum::<usize>();

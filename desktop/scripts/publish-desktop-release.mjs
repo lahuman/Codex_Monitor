@@ -254,7 +254,7 @@ export async function publishDesktopRelease({
         name: `Codex Monitor ${config.version} — macOS & Windows`,
         draft: true,
         prerelease: true,
-        body: `${marker}\n[프로젝트 / Website](${projectWebsite}) · [Mac 설치 안내](${projectMacGuide}) · [Windows 설치 안내](${projectWindowsGuide})\n\n${downloadTable}\n\nWindows x64 and macOS Apple Silicon (arm64) builds from ${context.sha}.\n\nBoth platforms passed automated tests and native packaging checks. Real-machine installation/upgrade testing remains required.\n\nWindows code signing: ${windowsSigning}. SmartScreen may warn.\nmacOS app signing: ${macosSigning.kind}; notarization ticket: ${macosSigning.notarizationTicket.status}; Gatekeeper: ${macosSigning.gatekeeper.status}. The installer is unsigned. See the DMG installation guide before first launch.\n\nBuild: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+        body: `${marker}\n[프로젝트 / Website](${projectWebsite}) · [Mac 설치 안내](${projectMacGuide}) · [Windows 설치 안내](${projectWindowsGuide}) · [작업·검증 정리](${projectWebsite}docs/monitor/releases/)\n\n${downloadTable}\n\nWindows x64 and macOS Apple Silicon (arm64) builds from ${context.sha}.\n\nBoth platforms passed automated tests and native packaging checks. Real-machine installation/upgrade testing remains required.\n\nWindows code signing: ${windowsSigning}. SmartScreen may warn.\nmacOS app signing: ${macosSigning.kind}; notarization ticket: ${macosSigning.notarizationTicket.status}; Gatekeeper: ${macosSigning.gatekeeper.status}. The installer is unsigned. See the DMG installation guide before first launch.\n\nBuild: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
       })
     ).data;
   }

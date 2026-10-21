@@ -2,7 +2,7 @@ import { resetCreditView } from "./reset-credits-model";
 import { TriangleAlert } from "lucide-react";
 import { ResetCreditsPanel } from "./reset-credits";
 import { QuotaMeter, QuotaLegend } from "./components";
-import type { Snapshot, Sample, ObservedWindow } from "./data";
+import type { Snapshot, Sample, ObservedWindow, AlertPreference } from "./data";
 
 import {
   periods,
@@ -16,6 +16,7 @@ import {
   decrease,
   segments,
   accountSamples,
+  isCurrentObservation,
 } from "./insights-model";
 export function MonitoringSummary({
   data,
@@ -30,13 +31,10 @@ export function MonitoringSummary({
   for (const account of data.accounts) counts[health(data, account, now)]++;
   const alerts = data.accounts.filter((a) => {
     const pref = preference(data, a.id),
-      at = observedSeconds(a),
       known = values(data, a.id);
     return (
-      !a.paused &&
+      isCurrentObservation(data, a, now) &&
       pref.enabled &&
-      at != null &&
-      now - at <= 120 &&
       known.some((v) => v <= pref.threshold)
     );
   });
@@ -111,7 +109,13 @@ export function MonitoringSummary({
     </section>
   );
 }
-export function HistoryGraph({ samples, now }: { samples: Sample[]; now: number }) {
+export function HistoryGraph({
+  samples,
+  now,
+}: {
+  samples: Sample[];
+  now: number;
+}) {
   const visible = samples.filter((s) => s.at >= now - 86400 && s.at <= now);
   if (visible.length < 2)
     return (
@@ -130,62 +134,58 @@ export function HistoryGraph({ samples, now }: { samples: Sample[]; now: number 
     );
   return (
     <div className="space-y-2">
-      <svg
-        viewBox="0 0 640 180"
-        role="img"
-        aria-label="최근 24시간 잔여 한도 변화"
-        className="history-plot"
-      >
-        {[0, 50, 100].map((value) => (
-          <g key={value}>
-            <line
-              x1="38"
-              y1={140 - value * 1.08}
-              x2="624"
-              y2={140 - value * 1.08}
-              stroke="currentColor"
-              opacity="0.12"
-            />
-            <text
-              x="0"
-              y={144 - value * 1.08}
-              fill="currentColor"
-              fontSize="13"
-            >
-              {value}%
-            </text>
-          </g>
-        ))}
-        {available.flatMap((period) =>
-          segments(visible, period).map((part, index) => (
-            <polyline
-              key={`${period}-${index}`}
-              fill="none"
-              stroke={colors[period]}
-              strokeWidth="2"
-              points={part
-                .map(
-                  (s) =>
-                    `${38 + (586 * (s.at - (now - 86400))) / 86400},${140 - sampleWindow(s, period)!.remaining! * 1.08}`,
-                )
-                .join(" ")}
-            >
-              <title>
-                {part[0].windows.find((w) => w.period === period)?.label}
-              </title>
-            </polyline>
-          )),
-        )}
-        <text x="38" y="170" fill="currentColor" fontSize="13">
-          24시간 전
-        </text>
-        <text x="300" y="170" fill="currentColor" fontSize="13">
-          12시간 전
-        </text>
-        <text x="590" y="170" fill="currentColor" fontSize="13">
-          지금
-        </text>
-      </svg>
+      <div className="history-frame">
+        <div className="history-y-labels" aria-hidden="true">
+          <span>100%</span>
+          <span>50%</span>
+          <span>0%</span>
+        </div>
+        <svg
+          viewBox="38 24 586 124"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="최근 24시간 잔여 한도 변화"
+          className="history-plot"
+        >
+          {[0, 50, 100].map((value) => (
+            <g key={value}>
+              <line
+                x1="38"
+                y1={140 - value * 1.08}
+                x2="624"
+                y2={140 - value * 1.08}
+                stroke="currentColor"
+                opacity="0.12"
+              />
+            </g>
+          ))}
+          {available.flatMap((period) =>
+            segments(visible, period).map((part, index) => (
+              <polyline
+                key={`${period}-${index}`}
+                fill="none"
+                stroke={colors[period]}
+                strokeWidth="2"
+                points={part
+                  .map(
+                    (s) =>
+                      `${38 + (586 * (s.at - (now - 86400))) / 86400},${140 - sampleWindow(s, period)!.remaining! * 1.08}`,
+                  )
+                  .join(" ")}
+              >
+                <title>
+                  {part[0].windows.find((w) => w.period === period)?.label}
+                </title>
+              </polyline>
+            )),
+          )}
+        </svg>
+      </div>
+      <div className="history-x-labels" aria-hidden="true">
+        <span>24시간 전</span>
+        <span>12시간 전</span>
+        <span>지금</span>
+      </div>
       <p className="history-legend" aria-label="변화 그래프 범례">
         {available.map((period) => (
           <span key={period}>
@@ -208,8 +208,10 @@ function WindowInsight({
   window,
   samples,
   now,
+  muted,
 }: {
   window: ObservedWindow;
+  muted: boolean;
   samples: Sample[];
   now: number;
 }) {
@@ -217,7 +219,11 @@ function WindowInsight({
   return (
     <div className="quota-tile">
       <div className="quota-tile-body">
-        <QuotaMeter label={window.label} value={window.remaining} />
+        <QuotaMeter
+          label={window.label}
+          value={window.remaining}
+          muted={muted}
+        />
         <div className="space-y-2 text-xs">
           <p className="font-medium">
             {window.label} · 잔여{" "}
@@ -280,14 +286,18 @@ export function MonitoringInsights({
                 />
                 <div className="account-identity">
                   <p className={`account-name ${blurred ? "blur-sm" : ""}`}>
-                    {account.email || account.account_id}
+                    {data.account_labels[account.id]?.full ||
+                      account.email ||
+                      account.account_id}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {account.plan ?? "플랜 미확인"} ·{" "}
                     {account.paused ? "일시 정지" : "활성"}
                   </p>
                 </div>
-                <span className="account-state">{state}</span>
+                <span className="account-state" data-state={state}>
+                  {state}
+                </span>
               </header>
               <p className="text-sm">
                 {account.paused
@@ -312,6 +322,8 @@ export function MonitoringInsights({
                 )}
                 {age == null
                   ? "사용량 조회 전"
+                  : at! > now
+                    ? "조회 시각 확인 필요"
                   : age > 120
                     ? "오래된 사용량 · 2분 이상 경과"
                     : `최근 2분 이내 관측 · ${age < 1 ? "방금 확인" : duration(age) + " 전 확인"}`}{" "}
@@ -329,11 +341,6 @@ export function MonitoringInsights({
                   사용량 조회 실패 · {data.usage_errors[account.id]}
                 </p>
               )}
-              <ResetCreditsPanel
-                observation={data.reset_credits[account.id]}
-                now={now}
-                paused={account.paused}
-              />
               <QuotaLegend />
               <div className="quota-grid">
                 {windows.map((w) => (
@@ -342,6 +349,7 @@ export function MonitoringInsights({
                     window={w}
                     samples={samples}
                     now={now}
+                    muted={state === "미확인" || account.paused}
                   />
                 ))}
               </div>
@@ -350,64 +358,82 @@ export function MonitoringInsights({
                   이 기간의 한도가 아직 관측되지 않았습니다.
                 </p>
               )}
+              <ResetCreditsPanel
+                observation={data.reset_credits[account.id]}
+                now={now}
+                paused={account.paused}
+              />
               <div className="history-section">
                 <h3 className="text-xs font-medium mb-3">
                   최근 24시간 · 잔여 한도
                 </h3>
                 <HistoryGraph samples={samples} now={now} />
               </div>
-              <div className="alert-settings flex flex-wrap items-center gap-3 text-xs">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={pref.enabled}
-                    disabled={busy}
-                    onChange={(event) =>
-                      onConfigure(
-                        account.id,
-                        event.target.checked,
-                        pref.threshold,
-                      )
-                    }
-                  />
-                  한도 부족 앱 내 알림
-                </label>
-                <label className="flex items-center gap-2">
-                  알림 기준
-                  <select
-                    className="desktop-select"
-                    aria-label={`${account.id} 알림 기준`}
-                    value={pref.threshold}
-                    disabled={busy}
-                    onChange={(event) =>
-                      onConfigure(
-                        account.id,
-                        pref.enabled,
-                        Number(event.target.value),
-                      )
-                    }
-                  >
-                    {[5, 10, 20, 30].map((value) => (
-                      <option key={value} value={value}>
-                        잔여 {value}% 이하
-                      </option>
-                    ))}
-                    {![5, 10, 20, 30].includes(pref.threshold) && (
-                      <option value={pref.threshold}>
-                        잔여 {pref.threshold}% 이하
-                      </option>
-                    )}
-                  </select>
-                </label>
-              </div>
+              <AlertSettings
+                id={account.id}
+                value={pref}
+                busy={busy}
+                onConfigure={onConfigure}
+              />
             </article>
           );
         })}
       </div>
       <p className="text-xs text-muted-foreground">
-        이력은 이 Mac에만 저장합니다. 최대 24시간 그래프 · 5분 간격 기록 ·
+        이력은 이 기기에만 저장합니다. 최대 24시간 그래프 · 5분 간격 기록 ·
         감소량은 토큰 수가 아닌 퍼센트포인트입니다. 알림은 앱 안에서 표시됩니다.
       </p>
     </section>
+  );
+}
+
+export function AlertSettings({
+  id,
+  value,
+  busy,
+  onConfigure,
+}: {
+  id: string;
+  value: AlertPreference;
+  busy: boolean;
+  onConfigure: (id: string, enabled: boolean, threshold: number) => void;
+}) {
+  return (
+    <div className="alert-settings flex flex-wrap items-center gap-3 text-xs">
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={value.enabled}
+          disabled={busy}
+          onChange={(event) =>
+            onConfigure(id, event.target.checked, value.threshold)
+          }
+        />
+        한도 부족 앱 내 알림
+      </label>
+      <label className="flex items-center gap-2">
+        알림 기준
+        <select
+          className="desktop-select"
+          aria-label={`${id} 알림 기준`}
+          value={value.threshold}
+          disabled={busy}
+          onChange={(event) =>
+            onConfigure(id, value.enabled, Number(event.target.value))
+          }
+        >
+          {[5, 10, 20, 30].map((value) => (
+            <option key={value} value={value}>
+              잔여 {value}% 이하
+            </option>
+          ))}
+          {![5, 10, 20, 30].includes(value.threshold) && (
+            <option value={value.threshold}>
+              잔여 {value.threshold}% 이하
+            </option>
+          )}
+        </select>
+      </label>
+    </div>
   );
 }

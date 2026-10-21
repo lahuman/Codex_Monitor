@@ -1,17 +1,19 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { AccountView } from "./data";
+import { quotaTone } from "./insights-model";
 export function QuotaMeter({
   label,
   value,
+  muted = false,
 }: {
   label: string;
   value: number | null;
+  muted?: boolean;
 }) {
   return (
     <div
-      className="quota-meter"
+      className={`quota-meter quota-tone-${quotaTone(value, muted)}`}
       role="img"
       aria-label={`${label} 잔여 ${value == null ? "미확인" : `${value}%`}`}
     >
@@ -56,40 +58,6 @@ export function QuotaLegend() {
     </ul>
   );
 }
-export function QuotaChart({
-  accounts,
-  period = "primary",
-}: {
-  accounts: AccountView[];
-  period?: "primary" | "secondary" | "monthly";
-}) {
-  const label = { primary: "5시간", secondary: "주간", monthly: "월간" }[
-    period
-  ];
-  return (
-    <section className="quota-tile">
-      {accounts.map((account) => {
-        const value =
-          period === "monthly"
-            ? account.usage?.monthlyRemainingPercent
-            : period === "secondary"
-              ? account.usage?.secondaryRemainingPercent
-              : account.usage?.primaryRemainingPercent;
-        return (
-          <div key={account.accountId} className="quota-tile-body">
-            <QuotaMeter label={label} value={value ?? null} />
-            <div>
-              <h3>
-                {label} · 잔여 {value == null ? "—" : `${value}%`}
-              </h3>
-              <QuotaLegend />
-            </div>
-          </div>
-        );
-      })}
-    </section>
-  );
-}
 export function CopyField({ label, value }: { label: string; value: string }) {
   const field = useRef<HTMLInputElement>(null);
   const [notice, setNotice] = useState("");
@@ -104,8 +72,8 @@ export function CopyField({ label, value }: { label: string; value: string }) {
     }
   }
   return (
-    <div className="space-y-2">
-      <label className="grid gap-2 text-xs">
+    <div className="copy-field space-y-2">
+      <label className="grid gap-2 text-sm">
         {label}
         <div className="flex gap-2">
           <Input

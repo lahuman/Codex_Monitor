@@ -75,15 +75,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Native persistence and desktop tests
         run: |
-          cargo test --locked -p codex-lb-server --lib
+          cargo test --locked -p codex-lb-server --features legacy-relay --lib --test device_login --test workflow
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test --locked -p codex-lb-desktop --bin codex-lb-desktop
+          cargo test --locked -p codex-lb-desktop --lib
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Release publication contracts
         run: node --test desktop/scripts/publish-desktop-release.test.mjs
       - name: Frontend tests
         run: |
-          bun run --cwd frontend test src/desktop/App.test.tsx src/desktop/insights.test.tsx src/desktop/reset-credits.test.tsx
+          bun run --cwd frontend test src/desktop
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Package NSIS installer
         run: npm --prefix desktop run package:windows
@@ -128,8 +128,8 @@ jobs:
       - name: Build dashboard and test native monitoring
         run: |
           npm --prefix desktop run build:dashboard
-          cargo test --locked -p codex-lb-server --lib
-          cargo test --locked -p codex-lb-desktop --bin codex-lb-desktop
+          cargo test --locked -p codex-lb-server --features legacy-relay --lib --test device_login --test workflow
+          cargo test --locked -p codex-lb-desktop --lib
           node --test desktop/scripts/publish-desktop-release.test.mjs
           bun run --cwd frontend test src/desktop
       - name: Package and verify macOS distribution

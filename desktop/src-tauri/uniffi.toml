@@ -1,0 +1,3 @@
+[bindings.kotlin]
+package_name = "local.codex_lb.desktop.preview.background"
+cdylib_name = "codex_lb_desktop_lib"

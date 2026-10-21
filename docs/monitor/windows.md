@@ -13,7 +13,7 @@ Windows 10 / 11 **x64**를 대상으로 합니다. 같은 React 대시보드와 
 3. Releases에서 `.exe`와 `SHA256SUMS-windows-x64.txt`를 받아 해시를 대조합니다. 메타데이터는 `release-windows-x64.json`입니다. Actions의 **Codex-Monitor-windows-x64** Artifact도 30일간 유지되며, 이 ZIP 안에서는 기존 이름 `SHA256SUMS.txt`, `release.json`을 사용합니다. Artifact 다운로드에는 GitHub 로그인이 필요할 수 있습니다.
 
 ```powershell
-Get-FileHash .\Codex-Monitor-0.1.10-windows-x64-setup.exe -Algorithm SHA256
+Get-FileHash .\Codex-Monitor-0.1.21-windows-x64-setup.exe -Algorithm SHA256
 ```
 
 4. `Codex-Monitor-<버전>-windows-x64-setup.exe`를 실행합니다. 현재 사용자 범위로 설치하며 한국어·영어 설치 언어를 선택할 수 있습니다.
@@ -53,8 +53,8 @@ npm --prefix desktop run package:windows
 명령은 아이콘을 생성하고, 최적화 x64 앱을 빌드한 뒤 실제 앱의 PE/COFF 아키텍처를 검사합니다. NSIS 설치 파일만 선택해 버전별 폴더에 복사하고 SHA-256과 메타데이터를 기록합니다. 작업 트리나 계정 데이터는 패키징하지 않으며 이미 있는 릴리스 폴더를 덮어쓰지 않습니다.
 
 ```text
-desktop/releases/0.1.10/windows-x64/
-├── Codex-Monitor-0.1.10-windows-x64-setup.exe
+desktop/releases/0.1.21/windows-x64/
+├── Codex-Monitor-0.1.21-windows-x64-setup.exe
 ├── SHA256SUMS.txt
 └── release.json
 ```
@@ -87,4 +87,4 @@ Windows는 트레이 제목 문자열을 표시하지 않으므로, macOS의 상
 
 기존 Windows 전용 태그·릴리스는 보존하며, 새 빌드부터 공통 `desktop-v<버전>` 릴리스를 사용합니다. 같은 버전의 macOS DMG·ZIP은 해당 릴리스의 Assets에서 함께 받을 수 있습니다.
 
-0.1.11부터 NSIS 시작·완료 화면의 사이드바와 상단에 Codex Monitor 브랜드 이미지를 적용하고, 설치 파일의 홈페이지를 `https://lahuman.github.io/Codex_Monitor/`로 지정합니다. 실제 Windows 설치 화면과 홈페이지 링크는 Windows 빌드 후 PC에서 확인해야 합니다.
+0.1.21부터 NSIS 시작·완료 화면의 사이드바와 상단에 Codex Monitor 브랜드 이미지를 적용하고, 설치 파일의 홈페이지를 `https://lahuman.github.io/Codex_Monitor/`로 지정합니다. 실제 Windows 설치 화면과 홈페이지 링크는 Windows 빌드 후 PC에서 확인해야 합니다.

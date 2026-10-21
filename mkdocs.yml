@@ -1,5 +1,5 @@
 site_name: Codex Monitor · Documentation
-site_description: Codex Monitor desktop guides and inherited codex-lb service reference
+site_description: Codex Monitor desktop and Android guides and inherited codex-lb service reference
 site_url: https://lahuman.github.io/Codex_Monitor/docs/
 repo_url: https://github.com/lahuman/Codex_Monitor
 repo_name: lahuman/Codex_Monitor
@@ -55,10 +55,12 @@ validation:
 
 nav:
   - Home: index.md
-  - Codex Monitor (desktop fork):
+  - Codex Monitor:
       - Overview: monitor/index.md
       - Features and metrics: monitor/features.md
+      - Work and release summary: monitor/releases.md
       - Development: monitor/development.md
+      - Android: monitor/android.md
       - Windows: monitor/windows.md
       - Mac installation: monitor/macos-installation.md
       - Project website: monitor/website.md

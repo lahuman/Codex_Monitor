@@ -52,6 +52,14 @@ pub async fn start_login(state: State<'_, DesktopState>) -> Result<DeviceView, S
         .map_err(|e| e.to_string())
 }
 #[tauri::command]
+pub async fn pending_login(state: State<'_, DesktopState>) -> Result<Option<DeviceView>, String> {
+    match service(&state)?.pending_login().await {
+        Ok(view) => Ok(Some(view)),
+        Err(codex_lb_server::business::Error::Expired) => Ok(None),
+        Err(error) => Err(error.to_string()),
+    }
+}
+#[tauri::command]
 pub async fn open_login_page(
     app: tauri::AppHandle,
     state: State<'_, DesktopState>,
@@ -72,8 +80,10 @@ pub async fn poll_login(state: State<'_, DesktopState>) -> Result<LoginStatus, S
 }
 #[tauri::command]
 pub async fn cancel_login(state: State<'_, DesktopState>) -> Result<(), String> {
-    service(&state)?.cancel_login().await;
-    Ok(())
+    service(&state)?
+        .cancel_login()
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
